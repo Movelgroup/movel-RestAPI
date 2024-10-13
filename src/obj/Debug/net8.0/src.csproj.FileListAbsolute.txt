@@ -1,0 +1,8 @@
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.csproj.AssemblyReference.cache
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.GeneratedMSBuildEditorConfig.editorconfig
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.AssemblyInfoInputs.cache
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.AssemblyInfo.cs
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.csproj.CoreCompileInputs.cache
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.MvcApplicationPartsAssemblyInfo.cs
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.MvcApplicationPartsAssemblyInfo.cache
+/home/theo/Documents/movel/emablerAPI-endpoint/src/obj/Debug/net8.0/src.sourcelink.json
