@@ -8,11 +8,11 @@ using apiEndpointNameSpace.Models;
 
 namespace apiEndpointNameSpace.Tests.IntegrationTests
 {
-    public class PushAPIIntegrationTests : IClassFixture<CustomWebApplicationFactory<Program>>
+    public class PushAPIIntegrationTests : IClassFixture<CustomWebApplicationFactory>
     {
-        private readonly CustomWebApplicationFactory<Program> _factory;
+        private readonly CustomWebApplicationFactory _factory;
 
-        public PushAPIIntegrationTests(CustomWebApplicationFactory<Program> factory)
+        public PushAPIIntegrationTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
         }

@@ -5,24 +5,25 @@ using apiEndpointNameSpace.Models;
 
 namespace apiEndpointNameSpace.Services
 {
-    public class NotificationService : INotificationService
+    public class NotificationService(IHubContext<ChargerHub> hubContext) : INotificationService
     {
-        private readonly IHubContext<ChargerHub> _hubContext;
-
-        public NotificationService(IHubContext<ChargerHub> hubContext)
-        {
-            _hubContext = hubContext;
-        }
 
         public async Task NotifyChargerStateChangeAsync(ProcessedChargerState data)
         {
-            await _hubContext.Clients.Group(data.ChargerId).SendAsync("ChargerStateChanged", data);
+            if (data.ChargerId != null)
+            {
+                await hubContext.Clients.Group(data.ChargerId).SendAsync("ChargerStateChanged", data);
+            }
         }
 
         public async Task NotifyMeasurementsUpdateAsync(ProcessedMeasurements data)
         {
-            await _hubContext.Clients.Group(data.ChargerId).SendAsync("MeasurementsUpdated", data);
+            if (data.ChargerId != null)
+            {
+                await hubContext.Clients.Group(data.ChargerId).SendAsync("MeasurementsUpdated", data);
+            }
         }
+
     }
 
     public class ChargerHub : Hub

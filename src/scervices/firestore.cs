@@ -5,14 +5,9 @@ using apiEndpointNameSpace.Models;
 
 namespace apiEndpointNameSpace.Services
 {
-    public class FirestoreService : IFirestoreService
+    public class FirestoreService(string projectId) : IFirestoreService
     {
-        private readonly FirestoreDb _db;
-
-        public FirestoreService(string projectId)
-        {
-            _db = FirestoreDb.Create(projectId);
-        }
+        private readonly FirestoreDb _db = FirestoreDb.Create(projectId);
 
         public async Task StoreChargerStateAsync(ProcessedChargerState data)
         {
@@ -26,17 +21,12 @@ namespace apiEndpointNameSpace.Services
             await docRef.SetAsync(data);
         }
 
-        public async Task<ChargerData> GetChargerDataAsync(string chargerId)
+        public async Task<ChargerData?> GetChargerDataAsync(string chargerId)
         {
             var docRef = _db.Collection("charger_data").Document(chargerId);
             var snapshot = await docRef.GetSnapshotAsync();
 
-            if (snapshot.Exists)
-            {
-                return snapshot.ConvertTo<ChargerData>();
-            }
-
-            return null;
+            return snapshot.Exists ? snapshot.ConvertTo<ChargerData>() : null;
         }
     }
 }

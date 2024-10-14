@@ -3,39 +3,59 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using apiEndpointNameSpace.Services;
 using apiEndpointNameSpace.Interfaces;
+using apiEndpointNameSpace;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Register custom services
-builder.Services.AddSingleton<IDataProcessor, DataProcessorService>();
-builder.Services.AddSingleton<IFirestoreService>(sp => new FirestoreService(builder.Configuration["GoogleCloudProjectId"]));
-builder.Services.AddSingleton<INotificationService, NotificationService>();
-builder.Services.AddSingleton<IAuthorizationService, AuthorizationService>();
-
-// Add SignalR
-builder.Services.AddSignalR();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+namespace apiEndpointNameSpace
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = CreateHostBuilder(args).Build();
+            builder.Run();
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+    }
+
+    public class Startup
+    {
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddControllers();
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen();
+
+            services.AddSingleton<IDataProcessor, DataProcessorService>();
+            services.AddSingleton<IFirestoreService>(sp => new FirestoreService(sp.GetRequiredService<IConfiguration>()["GoogleCloudProjectId"] ?? throw new InvalidOperationException("GoogleCloudProjectId is not set in the configuration")));
+            services.AddSingleton<INotificationService, NotificationService>();
+            services.AddSingleton<IAuthorizationService, AuthorizationService>();
+
+            services.AddSignalR();
+        }
+
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseRouting();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                endpoints.MapHub<ChargerHub>("/chargerhub");
+            });
+        }
+    }
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-// Map SignalR hub
-app.MapHub<ChargerHub>("/chargerhub");
-
-app.Run();

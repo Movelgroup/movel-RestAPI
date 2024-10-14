@@ -14,7 +14,7 @@ namespace apiEndpointNameSpace.Interfaces
     {
         Task StoreChargerStateAsync(ProcessedChargerState data);
         Task StoreMeasurementsAsync(ProcessedMeasurements data);
-        Task<ChargerData> GetChargerDataAsync(string chargerId);
+        Task<ChargerData?> GetChargerDataAsync(string chargerId);
     }
 
     public interface INotificationService

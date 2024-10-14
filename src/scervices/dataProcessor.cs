@@ -20,7 +20,7 @@ namespace apiEndpointNameSpace.Services
                 ChargerId = message.ChargerId,
                 SocketId = message.SocketId,
                 Timestamp = message.TimeStamp,
-                Status = Enum.Parse<ChargerStatus>(message.Status),
+                Status = Enum.Parse<ChargerStatus>(message.Status ?? throw new ArgumentException(nameof(message.Status))),
                 ErrorCode = message.ErrorCode,
                 Message = message.Message
             };
@@ -40,13 +40,13 @@ namespace apiEndpointNameSpace.Services
                 ChargerId = message.ChargerId,
                 SocketId = message.SocketId,
                 Timestamp = message.TimeStamp,
-                Measurements = message.Measurements.Select(m => new ProcessedMeasurement
+                Measurements = message.Measurements?.Select(m => new ProcessedMeasurement
                 {
-                    Value = decimal.Parse(m.Value),
+                    Value = decimal.Parse(m.Value ?? throw new ArgumentNullException(nameof(message))),
                     TypeOfMeasurement = m.TypeOfMeasurement,
                     Phase = m.Phase,
                     Unit = m.Unit
-                }).ToList()
+                }).ToList() ?? []
             };
 
             return await Task.FromResult(processedMeasurements);

@@ -5,14 +5,8 @@ using apiEndpointNameSpace.Models;
 
 namespace apiEndpointNameSpace.Services
 {
-    public class AuthorizationService : IAuthorizationService
+    public class AuthorizationService(IFirestoreService firestoreService) : IAuthorizationService
     {
-        private readonly IFirestoreService _firestoreService;
-
-        public AuthorizationService(IFirestoreService firestoreService)
-        {
-            _firestoreService = firestoreService;
-        }
 
         public async Task<bool> CanAccessChargerDataAsync(ClaimsPrincipal user, string chargerId)
         {
@@ -27,13 +21,13 @@ namespace apiEndpointNameSpace.Services
                 return true;
             }
 
-            var chargerData = await _firestoreService.GetChargerDataAsync(chargerId);
+            var chargerData = await firestoreService.GetChargerDataAsync(chargerId);
             if (chargerData == null)
             {
                 return false;
             }
 
-            return chargerData.OwnerId == userId || chargerData.AssociatedUserIds.Contains(userId);
+            return chargerData.OwnerId == userId || (chargerData.AssociatedUserIds?.Contains(userId) ?? false);
         }
     }
 }
