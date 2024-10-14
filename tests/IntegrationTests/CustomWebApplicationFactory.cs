@@ -1,3 +1,8 @@
+/*
+This script defines a custom WebApplicationFactory that sets up the testing environment. 
+It's responsible for configuring the test server with mocked services.
+*/
+
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;

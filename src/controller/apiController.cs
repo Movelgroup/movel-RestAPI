@@ -25,12 +25,18 @@ namespace apiEndpointNameSpace.Controllers
             try
             {
                 var processedData = await dataProcessor.ProcessChargerStateAsync(message);
-                await firestoreService.StoreChargerStateAsync(processedData);
+                Console.Write("recivedChargerState data recived, chargerID: ");
+                Console.WriteLine(processedData.ChargerId);
+
+                var storeInfo = await firestoreService.StoreChargerStateAsync(processedData);
+                Console.WriteLine($"FirestoreInfo: {storeInfo}");
+
                 await notificationService.NotifyChargerStateChangeAsync(processedData);
-                return Ok(new { Status = "Success", Message = "Charger state received and processed" });
+                return Ok(new { Status = "Success", Message = "Charger state received and processed", debugInfo = storeInfo });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error: {ex.Message}");
                 // TODO: Log the exception
                 return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the charger state" });
             }

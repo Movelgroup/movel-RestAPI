@@ -1,3 +1,8 @@
+/*
+This script defines the actual test cases that use the CustomWebApplicationFactory 
+to run tests against your API endpoints.
+*/
+
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net.Http;
 using System.Text;

@@ -12,7 +12,7 @@ namespace apiEndpointNameSpace.Interfaces
 
     public interface IFirestoreService
     {
-        Task StoreChargerStateAsync(ProcessedChargerState data);
+        Task<string> StoreChargerStateAsync(ProcessedChargerState data);
         Task StoreMeasurementsAsync(ProcessedMeasurements data);
         Task<ChargerData?> GetChargerDataAsync(string chargerId);
     }

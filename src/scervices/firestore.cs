@@ -9,10 +9,13 @@ namespace apiEndpointNameSpace.Services
     {
         private readonly FirestoreDb _db = FirestoreDb.Create(projectId);
 
-        public async Task StoreChargerStateAsync(ProcessedChargerState data)
+        public async Task<string> StoreChargerStateAsync(ProcessedChargerState data)
         {
             var docRef = _db.Collection("charger_states").Document(data.ChargerId);
+            var debugInfo = $"storing data in: {docRef.Collection}, DB: {_db}";
+            Console.WriteLine(debugInfo);
             await docRef.SetAsync(data);
+            return debugInfo;
         }
 
         public async Task StoreMeasurementsAsync(ProcessedMeasurements data)
