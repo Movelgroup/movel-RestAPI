@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using apiEndpointNameSpace.Services;
 using apiEndpointNameSpace.Interfaces;
-using apiEndpointNameSpace;
+using NReco.Logging.File;
 
 namespace apiEndpointNameSpace
 {
@@ -11,51 +12,54 @@ namespace apiEndpointNameSpace
     {
         public static void Main(string[] args)
         {
-            var builder = CreateHostBuilder(args).Build();
-            builder.Run();
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Configure logging
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+            builder.Logging.AddConsole();
+            builder.Logging.AddDebug();
+            builder.Logging.AddEventSourceLogger();
+            builder.Logging.AddFile(builder.Configuration.GetSection("Logging"));
+
+            // Add services to the container.
+            ConfigureServices(builder.Services);
+
+            var app = builder.Build();
+
+            app.Logger.LogInformation("Starting web application");
+
+            // Configure the HTTP request pipeline.
+            ConfigureApp(app);
+
+            app.Run();
+
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
-    }
-
-    public class Startup
-    {
-        public void ConfigureServices(IServiceCollection services)
+        public static void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
-
             services.AddSingleton<IDataProcessor, DataProcessorService>();
-            services.AddSingleton<IFirestoreService>(sp => new FirestoreService(sp.GetRequiredService<IConfiguration>()["GoogleCloudProjectId"] ?? throw new InvalidOperationException("GoogleCloudProjectId is not set in the configuration")));
+            services.AddSingleton<IFirestoreService, FirestoreService>(); // TODO: make sure that the firebase credentials is accessable when deplaying the code, ass of now its localy stored
             services.AddSingleton<INotificationService, NotificationService>();
             services.AddSingleton<IAuthorizationService, AuthorizationService>();
-
             services.AddSignalR();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public static void ConfigureApp(WebApplication app)
         {
-            if (env.IsDevelopment())
+            if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
             app.UseHttpsRedirection();
-            app.UseRouting();
             app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-                endpoints.MapHub<ChargerHub>("/chargerhub");
-            });
+            app.MapControllers();
+            app.MapHub<ChargerHub>("/chargerhub");
         }
     }
 }

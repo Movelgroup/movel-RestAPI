@@ -443,3 +443,13 @@
 /home/theo/Documents/movel/emablerAPI-endpoint/tests/obj/Debug/net8.0/apiEndpointNameSpace.Tests.pdb
 /home/theo/Documents/movel/emablerAPI-endpoint/tests/obj/Debug/net8.0/apiEndpointNameSpace.Tests.genruntimeconfig.cache
 /home/theo/Documents/movel/emablerAPI-endpoint/tests/obj/Debug/net8.0/ref/apiEndpointNameSpace.Tests.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.AspNetCore.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.Extensions.Hosting.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.Extensions.Logging.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.Formatting.Compact.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.Settings.Configuration.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.Sinks.Console.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.Sinks.Debug.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/Serilog.Sinks.File.dll
+/home/theo/Documents/movel/emablerAPI-endpoint/tests/bin/Debug/net8.0/NReco.Logging.File.dll

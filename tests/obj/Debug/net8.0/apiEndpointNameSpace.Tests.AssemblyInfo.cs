@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("apiEndpointNameSpace.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+20e780fca8862d50800ee9e72d5def2968ea34f0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+937767a6bee5a9843758b6e2dfbd09cac9e8dec7")]
 [assembly: System.Reflection.AssemblyProductAttribute("apiEndpointNameSpace.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("apiEndpointNameSpace.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

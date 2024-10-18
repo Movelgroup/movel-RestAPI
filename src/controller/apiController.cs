@@ -1,86 +1,116 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models;
+using System.Net;
 
 namespace apiEndpointNameSpace.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PushAPIController(
-        IDataProcessor dataProcessor,
-        IFirestoreService firestoreService,
-        INotificationService notificationService,
-        IAuthorizationService authorizationService) : ControllerBase
+    public class PushAPIController : ControllerBase
     {
-        [HttpPost("charger-state")]
-        public async Task<IActionResult> ReceiveChargerState([FromBody] apiEndpointNameSpace.Models.ChargerStateMessage message)
+        private readonly IDataProcessor _dataProcessor;
+        private readonly IFirestoreService _firestoreService;
+        private readonly INotificationService _notificationService;
+        private readonly IAuthorizationService _authorizationService;
+
+        public PushAPIController(
+            IDataProcessor dataProcessor,
+            IFirestoreService firestoreService,
+            INotificationService notificationService,
+            IAuthorizationService authorizationService)
         {
+            _dataProcessor = dataProcessor;
+            _firestoreService = firestoreService;
+            _notificationService = notificationService;
+            _authorizationService = authorizationService;
+        }
+
+        [HttpPost("charger-state")]
+        public async Task<IActionResult> ReceiveChargerState([FromBody] ChargerStateMessage message, IServiceProvider serviceProvider)
+        {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("ReciveChargerStates");
+
             if (!ModelState.IsValid)
             {
+                logger.LogWarning("Invalid ModelState in ReceiveChargerState");
                 return BadRequest(ModelState);
             }
 
             try
             {
-                var processedData = await dataProcessor.ProcessChargerStateAsync(message);
-                Console.Write("recivedChargerState data recived, chargerID: ");
-                Console.WriteLine(processedData.ChargerId);
+                var processedData = await _dataProcessor.ProcessChargerStateAsync(message);
+                logger.LogInformation("Received ChargerState data, ChargerID: {ChargerId}", processedData.ChargerId);
 
-                var storeInfo = await firestoreService.StoreChargerStateAsync(processedData);
-                Console.WriteLine($"FirestoreInfo: {storeInfo}");
+                var storeInfo = await _firestoreService.StoreChargerStateAsync(processedData);
+                logger.LogInformation("FirestoreInfo: {StoreInfo}", storeInfo);
 
-                await notificationService.NotifyChargerStateChangeAsync(processedData);
-                return Ok(new { Status = "Success", Message = "Charger state received and processed", debugInfo = storeInfo });
+                await _notificationService.NotifyChargerStateChangeAsync(processedData);
+                
+                logger.LogInformation("Charger state processed successfully for ChargerID: {ChargerId}", processedData.ChargerId);
+                return Ok(new { Status = "Success", Message = "Charger state received and processed", DebugInfo = storeInfo });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
-                // TODO: Log the exception
+                logger.LogError(ex, "Error processing charger state");
                 return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the charger state" });
             }
         }
 
         [HttpPost("measurements")]
-        public async Task<IActionResult> ReceiveMeasurements([FromBody] apiEndpointNameSpace.Models.MeasurementsMessage message)
+        public async Task<IActionResult> ReceiveMeasurements([FromBody] MeasurementsMessage message, IServiceProvider serviceProvider)
         {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("ReciveChargerStates");
+
             if (!ModelState.IsValid)
             {
+                logger.LogWarning("Invalid ModelState in ReceiveMeasurements");
                 return BadRequest(ModelState);
             }
 
             try
             {
-                var processedData = await dataProcessor.ProcessMeasurementsAsync(message);
-                await firestoreService.StoreMeasurementsAsync(processedData);
-                await notificationService.NotifyMeasurementsUpdateAsync(processedData);
+                var processedData = await _dataProcessor.ProcessMeasurementsAsync(message);
+                await _firestoreService.StoreMeasurementsAsync(processedData);
+                await _notificationService.NotifyMeasurementsUpdateAsync(processedData);
+
+                logger.LogInformation("Measurements processed successfully for ChargerID: {ChargerId}", processedData.ChargerId);
                 return Ok(new { Status = "Success", Message = "Measurements received and processed" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // TODO: Log the exception
+                logger.LogError(ex, "Error processing measurements");
                 return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the measurements" });
             }
         }
 
         [HttpGet("charger/{chargerId}")]
-        public async Task<IActionResult> GetChargerData(string chargerId)
+        public async Task<IActionResult> GetChargerData(string chargerId, IServiceProvider serviceProvider)
         {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("ReciveChargerStates");
+                
             try
             {
                 var user = HttpContext.User;
-                if (!await authorizationService.CanAccessChargerDataAsync(user, chargerId))
+                if (!await _authorizationService.CanAccessChargerDataAsync(user, chargerId))
                 {
+                    logger.LogWarning("Unauthorized access attempt for ChargerID: {ChargerId}", chargerId);
                     return Forbid();
                 }
 
-                var chargerData = await firestoreService.GetChargerDataAsync(chargerId);
+                var chargerData = await _firestoreService.GetChargerDataAsync(chargerId);
+                logger.LogInformation("Charger data retrieved successfully for ChargerID: {ChargerId}", chargerId);
                 return Ok(chargerData);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // TODO: Log the exception
+                logger.LogError(ex, "Error retrieving charger data for ChargerID: {ChargerId}", chargerId);
                 return StatusCode(500, new { Status = "Error", Message = "An error occurred while retrieving charger data" });
             }
         }
