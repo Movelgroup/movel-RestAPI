@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 namespace apiEndpointNameSpace.Models
 {
+    
+    public class ErrorResponse
+    {
+        public string? Status { get; set; }
+        public string? Message { get; set; }
+        public string? ExceptionMessage { get; set; }
+        public string? StackTrace { get; set; }
+    }
     public class ChargerStateMessage
     {
         public string? ChargerId { get; set; }
@@ -34,7 +42,7 @@ namespace apiEndpointNameSpace.Models
         public string? ChargerId { get; set; }
         public int? SocketId { get; set; }
         public DateTime? Timestamp { get; set; }
-        public ChargerStatus? Status { get; set; }
+        public string? Status { get; set; }
         public string? ErrorCode { get; set; }
         public string? Message { get; set; }
     }

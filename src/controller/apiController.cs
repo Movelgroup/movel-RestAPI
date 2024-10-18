@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models;
 using System.Net;
+using Google.Apis.Auth.OAuth2.Responses;
+using Google.Api;
 
 namespace apiEndpointNameSpace.Controllers
 {
@@ -57,7 +59,14 @@ namespace apiEndpointNameSpace.Controllers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error processing charger state");
-                return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the charger state" });
+                var errorRespose = new ErrorResponse
+                {
+                    Status = "Error",
+                    Message = "An error occurred while processing the charger state",
+                    ExceptionMessage = ex.Message,
+                    StackTrace = ex.StackTrace
+                };
+                return StatusCode(500, errorRespose);
             }
         }
 
@@ -94,7 +103,7 @@ namespace apiEndpointNameSpace.Controllers
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
                 .CreateLogger("ReciveChargerStates");
-                
+
             try
             {
                 var user = HttpContext.User;

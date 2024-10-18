@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models;
@@ -20,7 +21,7 @@ namespace apiEndpointNameSpace.Services
                 ChargerId = message.ChargerId,
                 SocketId = message.SocketId,
                 Timestamp = message.TimeStamp,
-                Status = Enum.Parse<ChargerStatus>(message.Status ?? throw new ArgumentException(nameof(message.Status))),
+                Status = message.Status,
                 ErrorCode = message.ErrorCode,
                 Message = message.Message
             };
