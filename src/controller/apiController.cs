@@ -64,7 +64,7 @@ namespace apiEndpointNameSpace.Controllers
                     Status = "Error",
                     Message = "An error occurred while processing the charger state",
                     ExceptionMessage = ex.Message,
-                    StackTrace = ex.StackTrace
+                    StackTrace = ex.StackTrace,
                 };
                 return StatusCode(500, errorRespose);
             }

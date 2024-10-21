@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Google.Cloud.Firestore;
 
 namespace apiEndpointNameSpace.Models
 {
@@ -37,14 +39,23 @@ namespace apiEndpointNameSpace.Models
         public string? Unit { get; set; }
     }
 
+    [FirestoreData]
     public class ProcessedChargerState
     {
+        [FirestoreProperty]
         public string? ChargerId { get; set; }
+        [FirestoreProperty]
         public int? SocketId { get; set; }
+        [FirestoreProperty]
         public DateTime? Timestamp { get; set; }
+        [FirestoreProperty]
         public string? Status { get; set; }
+        [FirestoreProperty]
         public string? ErrorCode { get; set; }
+        [FirestoreProperty]
         public string? Message { get; set; }
+
+        public ProcessedChargerState() {}
     }
 
     public class ProcessedMeasurements
