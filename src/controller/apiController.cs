@@ -98,30 +98,6 @@ namespace apiEndpointNameSpace.Controllers
             }
         }
 
-        [HttpGet("charger/{chargerId}")]
-        public async Task<IActionResult> GetChargerData(string chargerId, IServiceProvider serviceProvider)
-        {
-            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ReciveChargerStates");
-
-            try
-            {
-                var user = HttpContext.User;
-                if (!await _authorizationService.CanAccessChargerDataAsync(user, chargerId))
-                {
-                    logger.LogWarning("Unauthorized access attempt for ChargerID: {ChargerId}", chargerId);
-                    return Forbid();
-                }
-
-                var chargerData = await _firestoreService.GetChargerDataAsync(chargerId);
-                logger.LogInformation("Charger data retrieved successfully for ChargerID: {ChargerId}", chargerId);
-                return Ok(chargerData);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error retrieving charger data for ChargerID: {ChargerId}", chargerId);
-                return StatusCode(500, new { Status = "Error", Message = "An error occurred while retrieving charger data" });
-            }
-        }
+    
     }
 }
