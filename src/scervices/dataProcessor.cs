@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Net.Mail;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models;
@@ -47,10 +46,56 @@ namespace apiEndpointNameSpace.Services
                     TypeOfMeasurement = m.TypeOfMeasurement,
                     Phase = m.Phase,
                     Unit = m.Unit
-                }).ToList() ?? []
+                }).ToList() ?? new List<ProcessedMeasurement>()
             };
 
             return await Task.FromResult(processedMeasurements);
+        }
+
+        // New method for processing FullChargingTransaction
+        public async Task<ProcessedFullChargingTransaction> ProcessFullChargingTransactionAsync(FullChargingTransaction message)
+        {
+            if (string.IsNullOrEmpty(message.ChargerId))
+            {
+                throw new ArgumentException("ChargerId is required");
+            }
+
+            var processedTransaction = new ProcessedFullChargingTransaction
+            {
+                ChargerId = message.ChargerId,
+                SocketId = message.SocketId,
+                TimeStampStart = message.TimeStampStart,
+                TimeStampEnd = message.TimeStampEnd,
+                TransactionId = message.TransactionId,
+                AuthorizedIdTag = message.AuthorizedIdTag,
+                MeterReadStart = message.MeterReadStart,
+                MeterReadEnd = message.MeterReadEnd,
+                ConsumptionWh = message.ConsumptionWh
+            };
+
+            return await Task.FromResult(processedTransaction);
+        }
+
+        // New method for processing ChargingTransaction
+        public async Task<ProcessedChargingTransaction> ProcessChargingTransactionAsync(ChargingTransaction message)
+        {
+            if (string.IsNullOrEmpty(message.ChargerId))
+            {
+                throw new ArgumentException("ChargerId is required");
+            }
+
+            var processedTransaction = new ProcessedChargingTransaction
+            {
+                ChargerId = message.ChargerId,
+                SocketId = message.SocketId,
+                TimeStamp = message.TimeStamp,
+                Action = message.Action,
+                TransactionId = message.TransactionId,
+                AuthorizedIdTag = message.AuthorizedIdTag,
+                MeterRead = message.MeterRead
+            };
+
+            return await Task.FromResult(processedTransaction);
         }
     }
 }

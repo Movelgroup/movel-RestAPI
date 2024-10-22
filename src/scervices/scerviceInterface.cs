@@ -7,7 +7,9 @@ namespace apiEndpointNameSpace.Interfaces
     public interface IDataProcessor
     {
         Task<ProcessedChargerState> ProcessChargerStateAsync(ChargerStateMessage message);
+        Task<ProcessedFullChargingTransaction> ProcessFullChargingTransactionAsync(FullChargingTransaction message);
         Task<ProcessedMeasurements> ProcessMeasurementsAsync(MeasurementsMessage message);
+        Task<ProcessedChargingTransaction> ProcessChargingTransactionAsync(ChargingTransaction message);
     }
 
     public interface IFirestoreService
@@ -21,6 +23,9 @@ namespace apiEndpointNameSpace.Interfaces
     {
         Task NotifyChargerStateChangeAsync(ProcessedChargerState data);
         Task NotifyMeasurementsUpdateAsync(ProcessedMeasurements data);
+        Task NotifyFullChargingTransactionAsync(ProcessedFullChargingTransaction data);
+        Task NotifyChargingTransactionAsync(ProcessedChargingTransaction data);
+
     }
 
     public interface IAuthorizationService

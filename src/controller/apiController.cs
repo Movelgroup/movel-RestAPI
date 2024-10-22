@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models;
 using System.Net;
-using Google.Apis.Auth.OAuth2.Responses;
-using Google.Api;
 
 namespace apiEndpointNameSpace.Controllers
 {
@@ -32,10 +30,14 @@ namespace apiEndpointNameSpace.Controllers
         }
 
         [HttpPost("charger-state")]
+        // ChargerState message
+        /*
+        This message is used to deliver the current status of a charging station and it’s socket Status values are: Available, Error, Offline, Info, Charging, SuspendedCAR, SuspendedCHARGER, Preparing, Finishing, Booting, Unavailable
+        */
         public async Task<IActionResult> ReceiveChargerState([FromBody] ChargerStateMessage message, IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ReciveChargerStates");
+                .CreateLogger("ReceiveChargerStates");
 
             if (!ModelState.IsValid)
             {
@@ -59,22 +61,27 @@ namespace apiEndpointNameSpace.Controllers
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error processing charger state");
-                var errorRespose = new ErrorResponse
+                var errorResponse = new ErrorResponse
                 {
                     Status = "Error",
                     Message = "An error occurred while processing the charger state",
                     ExceptionMessage = ex.Message,
                     StackTrace = ex.StackTrace,
                 };
-                return StatusCode(500, errorRespose);
+                return StatusCode(500, errorResponse);
             }
         }
 
+
         [HttpPost("measurements")]
+        // Measurements message
+        /*
+        This message is send when charger is reporting meter values during the charging transaction. TypeofMeasurement, Phase and Unit are following OCPP1.6 model.
+        */
         public async Task<IActionResult> ReceiveMeasurements([FromBody] MeasurementsMessage message, IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ReciveChargerStates");
+                .CreateLogger("ReceiveMeasurements");
 
             if (!ModelState.IsValid)
             {
@@ -98,6 +105,66 @@ namespace apiEndpointNameSpace.Controllers
             }
         }
 
-    
+        // Endpoint for FullChargingTransaction
+        /*
+        This message is used to deliver information of a full charging transaction. This message is delivered after the charging has ended.
+        */
+        [HttpPost("full-charging-transaction")]
+        public async Task<IActionResult> ReceiveFullChargingTransaction([FromBody] FullChargingTransaction message, IServiceProvider serviceProvider)
+        {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("ReceiveFullChargingTransaction");
+
+            if (!ModelState.IsValid)
+            {
+                logger.LogWarning("Invalid ModelState in ReceiveFullChargingTransaction");
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var processedData = await _dataProcessor.ProcessFullChargingTransactionAsync(message);
+                await _notificationService.NotifyFullChargingTransactionAsync(processedData);
+
+                logger.LogInformation("Full charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
+                return Ok(new { Status = "Success", Message = "Full charging transaction received and processed" });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing full charging transaction");
+                return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the full charging transaction" });
+            }
+        }
+
+        // Endpoint for ChargingTransaction
+        /*
+        This message is send when charging transaction starts and stops. Action can be: 'transaction_start' or 'transaction_stop'
+        */
+        [HttpPost("charging-transaction")]
+        public async Task<IActionResult> ReceiveChargingTransaction([FromBody] ChargingTransaction message, IServiceProvider serviceProvider)
+        {
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("ReceiveChargingTransaction");
+
+            if (!ModelState.IsValid)
+            {
+                logger.LogWarning("Invalid ModelState in ReceiveChargingTransaction");
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var processedData = await _dataProcessor.ProcessChargingTransactionAsync(message);
+                await _notificationService.NotifyChargingTransactionAsync(processedData);
+
+                logger.LogInformation("Charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
+                return Ok(new { Status = "Success", Message = "Charging transaction received and processed" });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing charging transaction");
+                return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the charging transaction" });
+            }
+        }
     }
 }
