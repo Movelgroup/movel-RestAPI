@@ -78,6 +78,18 @@ namespace apiEndpointNameSpace
         {
             services.AddControllers();
             services.AddEndpointsApiExplorer();
+            services.AddCors(options =>
+                {
+                    options.AddPolicy("CorsPolicy", builder =>
+                    {
+                        builder
+                            .AllowAnyMethod()
+                            .AllowAnyHeader()
+                            .AllowCredentials()
+                            .WithOrigins("http://localhost:3000"); // Replace with actual frontend URL
+                    });
+                });
+
             services.AddSwaggerGen();
             services.AddSingleton<IDataProcessor, DataProcessorService>();
             services.AddSingleton<IFirestoreService>(sp => 
@@ -87,7 +99,12 @@ namespace apiEndpointNameSpace
             });
             services.AddSingleton<INotificationService, NotificationService>();
             services.AddSingleton<IAuthorizationService, AuthorizationService>();
-            services.AddSignalR();
+            services.AddSignalR(option =>
+            {
+                option.EnableDetailedErrors = true;
+            });
+
+            
         }
 
 
@@ -99,10 +116,15 @@ namespace apiEndpointNameSpace
                 app.UseSwaggerUI();
             }
 
+            app.UseCors("CorsPolicy");
+            app.UseRouting();
+            app.UseWebSockets();
             app.UseHttpsRedirection();
             app.UseAuthorization();
-            app.MapControllers();
             app.MapHub<ChargerHub>("/chargerhub");
+            app.MapControllers();
+
+            app.Logger.LogInformation("SignalR Hub mapped at: /chargerhub");
         }
     }
 }

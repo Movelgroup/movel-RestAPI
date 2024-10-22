@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models;
+using Microsoft.AspNetCore.Components;
 
 namespace apiEndpointNameSpace.Services
 {
@@ -26,8 +27,17 @@ namespace apiEndpointNameSpace.Services
 
     }
 
-    public class ChargerHub : Hub
+    [Route("/chargerhub")]
+    public class ChargerHub(ILogger<ChargerHub> logger) : Hub
     {
+        private readonly ILogger<ChargerHub> _logger = logger;
+
+        public override async Task OnConnectedAsync()
+        {
+            _logger.LogInformation($"Client connected: {Context.ConnectionId}");
+            await base.OnConnectedAsync();
+        }
+
         public async Task JoinChargerGroup(string chargerId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, chargerId);
