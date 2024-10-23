@@ -56,6 +56,8 @@ namespace apiEndpointNameSpace.Models
         
         [FirestoreProperty]
         public string? ErrorCode { get; set; }
+        [FirestoreProperty]
+        public string? MessageType { get; set; }
         
         [FirestoreProperty]
         public string? Message { get; set; }
@@ -66,6 +68,7 @@ namespace apiEndpointNameSpace.Models
     public class ProcessedMeasurements
     {
         public string? ChargerId { get; set; }
+        public string? MessageType { get; set; }
         public int? SocketId { get; set; }
         public DateTime? Timestamp { get; set; }
         public List<ProcessedMeasurement>? Measurements { get; set; }
@@ -103,6 +106,7 @@ namespace apiEndpointNameSpace.Models
     public class ProcessedFullChargingTransaction
     {
         public string? ChargerId { get; set; }
+        public string? MessageType { get; set; }
         public int SocketId { get; set; }
         public DateTime? TimeStampStart { get; set; }
         public DateTime? TimeStampEnd { get; set; }
@@ -127,6 +131,8 @@ namespace apiEndpointNameSpace.Models
     public class ProcessedChargingTransaction
     {
         public string? ChargerId { get; set; }
+        public string? MessageType { get; set; }
+
         public int SocketId { get; set; }
         public DateTime TimeStamp { get; set; }
         public string? Action { get; set; }

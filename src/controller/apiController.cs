@@ -49,7 +49,7 @@ namespace apiEndpointNameSpace.Controllers
             {
                 var processedData = await _dataProcessor.ProcessChargerStateAsync(message);
                 logger.LogInformation("Received ChargerState data, ChargerID: {ChargerId}", processedData.ChargerId);
-
+                
                 var storeInfo = await _firestoreService.StoreChargerStateAsync(processedData);
                 logger.LogInformation("FirestoreInfo: {StoreInfo}", storeInfo);
 

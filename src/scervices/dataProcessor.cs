@@ -22,6 +22,7 @@ namespace apiEndpointNameSpace.Services
                 Timestamp = message.TimeStamp,
                 Status = message.Status,
                 ErrorCode = message.ErrorCode,
+                MessageType = "chargerState",
                 Message = message.Message
             };
 
@@ -40,6 +41,7 @@ namespace apiEndpointNameSpace.Services
                 ChargerId = message.ChargerId,
                 SocketId = message.SocketId,
                 Timestamp = message.TimeStamp,
+                MessageType = "measurements",
                 Measurements = message.Measurements?.Select(m => new ProcessedMeasurement
                 {
                     Value = decimal.Parse(m.Value ?? throw new ArgumentNullException(nameof(message))),
@@ -63,6 +65,7 @@ namespace apiEndpointNameSpace.Services
             var processedTransaction = new ProcessedFullChargingTransaction
             {
                 ChargerId = message.ChargerId,
+                MessageType = "fullyCharged",
                 SocketId = message.SocketId,
                 TimeStampStart = message.TimeStampStart,
                 TimeStampEnd = message.TimeStampEnd,
@@ -87,6 +90,7 @@ namespace apiEndpointNameSpace.Services
             var processedTransaction = new ProcessedChargingTransaction
             {
                 ChargerId = message.ChargerId,
+                MessageType = "chargingStartStop",
                 SocketId = message.SocketId,
                 TimeStamp = message.TimeStamp,
                 Action = message.Action,
