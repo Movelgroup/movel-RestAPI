@@ -2,7 +2,7 @@ using Google.Cloud.Firestore;
 using System;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
-using apiEndpointNameSpace.Models;
+using apiEndpointNameSpace.Models.ChargerData;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,5 +80,32 @@ namespace apiEndpointNameSpace.Services
                 throw;
             }
         }
+
+        public async Task StoreSlowChargingAsync(ProcessedMeasurements data, decimal powerKw)
+    {
+        try
+        {
+            var slowChargingData = new
+            {
+                ChargerId = data.ChargerId,
+                SocketId = data.SocketId,
+                Timestamp = data.Timestamp,
+                PowerKw = powerKw,
+                DetailedMeasurements = data.Measurements,
+                DetectedAt = DateTime.UtcNow
+            };
+
+            var docRef = _db.Collection("slow_charging_incidents").Document();
+            await docRef.SetAsync(slowChargingData);
+            logger.LogInformation("Stored slow charging incident for ChargerId: {ChargerId}, Power: {PowerKw}kW", 
+                data.ChargerId, powerKw);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to store slow charging incident for ChargerId: {ChargerId}", 
+                data.ChargerId);
+            throw;
+        }
+    }
     }
 }

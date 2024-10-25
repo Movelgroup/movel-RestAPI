@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Google.Cloud.Firestore;
 
-namespace apiEndpointNameSpace.Models
+namespace apiEndpointNameSpace.Models.ChargerData
 {
     public class ErrorResponse
     {

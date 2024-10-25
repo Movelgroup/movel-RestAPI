@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using System.Security.Claims;
-using apiEndpointNameSpace.Models;
+using apiEndpointNameSpace.Models.ChargerData;
 
 namespace apiEndpointNameSpace.Interfaces
 {
@@ -17,6 +17,7 @@ namespace apiEndpointNameSpace.Interfaces
         Task<string> StoreChargerStateAsync(ProcessedChargerState data);
         Task StoreMeasurementsAsync(ProcessedMeasurements data);
         Task<ChargerData?> GetChargerDataAsync(string chargerId);
+        Task StoreSlowChargingAsync(ProcessedMeasurements data, decimal powerKw);
     }
 
     public interface INotificationService
