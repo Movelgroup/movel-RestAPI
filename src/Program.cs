@@ -7,6 +7,8 @@ using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 
 
 namespace apiEndpointNameSpace
@@ -21,9 +23,10 @@ namespace apiEndpointNameSpace
             ConfigureLogging(builder);
 
             var firestoreDb = InitializeFirestoreDb(builder.Configuration);
+            InitializeFirebaseAuth(builder.Configuration);
 
             // Add services to the container.
-            ConfigureServices(builder.Services, firestoreDb);
+            ConfigureServices(builder.Services, firestoreDb, builder.Configuration);
 
             var app = builder.Build();
 
@@ -73,8 +76,26 @@ namespace apiEndpointNameSpace
             builder.Logging.AddFile(builder.Configuration.GetSection("Logging"));
         }
 
+        private static void InitializeFirebaseAuth(IConfiguration configuration)
+        {
+            // Check if Firebase is already initialized
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                string credentialsPath = configuration["GoogleApplicationCredentials"]
+                    ?? Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS")
+                    ?? throw new InvalidOperationException("Google Application Credentials path is not set");
 
-        public static void ConfigureServices(IServiceCollection services, FirestoreDb firestoreDb)
+                FirebaseApp.Create(new AppOptions
+                {
+                    Credential = GoogleCredential.FromFile(credentialsPath),
+                    ProjectId = configuration["GoogleCloudProjectId"]
+                });
+            }
+        }
+
+
+
+        public static void ConfigureServices(IServiceCollection services, FirestoreDb firestoreDb, IConfiguration configuration)
         {
             services.AddControllers();
             services.AddEndpointsApiExplorer();
@@ -86,10 +107,46 @@ namespace apiEndpointNameSpace
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()
-                            .WithOrigins("http://localhost:3000"); // Replace with actual frontend URL
+                            .WithOrigins("http://localhost:3000", "https://movelsoftwaremanager.web.app"); // Replace with actual frontend URL
                     });
                 });
 
+            // Configure JWT Authentication
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidAudience = configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not configured")))
+                };
+
+                // Configure JWT Bearer events for SignalR
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chargerhub"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
+            });
             services.AddSwaggerGen();
             services.AddSingleton<IDataProcessor, DataProcessorService>();
             services.AddSingleton<IFirestoreService>(sp => 
@@ -98,7 +155,7 @@ namespace apiEndpointNameSpace
                 return new FirestoreService(firestoreDb, logger);
             });
             services.AddSingleton<INotificationService, NotificationService>();
-            services.AddSingleton<IAuthorizationService, AuthorizationService>();
+            services.AddSingleton<IFirebaseAuthService, FirebaseAuthService>();
             services.AddSignalR(option =>
             {
                 option.EnableDetailedErrors = true;

@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
-using apiEndpointNameSpace.Models;
+using apiEndpointNameSpace.Models.ChargerData;
+using apiEndpointNameSpace.Models.Measurements;
 using System.Net;
 
 namespace apiEndpointNameSpace.Controllers
@@ -15,18 +16,18 @@ namespace apiEndpointNameSpace.Controllers
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
         private readonly INotificationService _notificationService;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly IFirebaseAuthService _firebaseAuthService;
 
         public PushAPIController(
             IDataProcessor dataProcessor,
             IFirestoreService firestoreService,
             INotificationService notificationService,
-            IAuthorizationService authorizationService)
+            IFirebaseAuthService firebaseAuthService)
         {
             _dataProcessor = dataProcessor;
             _firestoreService = firestoreService;
             _notificationService = notificationService;
-            _authorizationService = authorizationService;
+            _firebaseAuthService = firebaseAuthService;
         }
 
         [HttpPost("charger-state")]

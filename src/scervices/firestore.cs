@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
+using apiEndpointNameSpace.Models.Auth;
+using apiEndpointNameSpace.Models.Measurements;
 
 namespace apiEndpointNameSpace.Services
 {

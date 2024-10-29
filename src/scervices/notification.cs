@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
-using apiEndpointNameSpace.Models;
+using apiEndpointNameSpace.Models.ChargerData;
+using apiEndpointNameSpace.Models.Measurements;
+using apiEndpointNameSpace.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace apiEndpointNameSpace.Services
 {
@@ -51,29 +55,57 @@ namespace apiEndpointNameSpace.Services
     }
 
     [Route("/chargerhub")]
+    [Authorize]
     public class ChargerHub : Hub
     {
         private readonly ILogger<ChargerHub> _logger;
+        private readonly IFirebaseAuthService _firebaseAuthService;
 
-        public ChargerHub(ILogger<ChargerHub> logger)
+        public ChargerHub(
+        ILogger<ChargerHub> logger,
+        IFirebaseAuthService firebaseAuthService)
         {
             _logger = logger;
+            _firebaseAuthService = firebaseAuthService;
         }
 
         public override async Task OnConnectedAsync()
         {
-            _logger.LogInformation($"Client connected: {Context.ConnectionId}");
-            await base.OnConnectedAsync();
+            try
+            {
+                var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    throw new HubException("Unauthorized connection attempt");
+                }
+
+                // Get user's allowed chargers from claims
+                var allowedChargers = Context.User?.Claims
+                    .Where(c => c.Type == "allowedCharger")
+                    .Select(c => c.Value)
+                    .ToList() ?? new List<string>();
+
+                // Join all allowed charger groups
+                foreach (var chargerId in allowedChargers)
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, chargerId);
+                    _logger.LogInformation($"User {userId} joined charger group: {chargerId}");
+                }
+
+                await base.OnConnectedAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in OnConnectedAsync");
+                throw;
+            }
         }
 
-        public async Task JoinChargerGroup(string chargerId)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, chargerId);
-        }
-
-        public async Task LeaveChargerGroup(string chargerId)
-        {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, chargerId);
+            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.LogInformation($"Client disconnected: {Context.ConnectionId}, UserId: {userId}");
+            await base.OnDisconnectedAsync(exception);
         }
     }
 }

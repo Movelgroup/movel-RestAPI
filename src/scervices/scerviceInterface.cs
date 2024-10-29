@@ -1,6 +1,12 @@
 using System.Threading.Tasks;
 using System.Security.Claims;
 using apiEndpointNameSpace.Models.ChargerData;
+using apiEndpointNameSpace.Models.Measurements;
+using apiEndpointNameSpace.Models.Auth;
+using FirebaseAdmin.Auth;
+using System.IdentityModel.Tokens.Jwt;
+
+
 
 namespace apiEndpointNameSpace.Interfaces
 {
@@ -29,8 +35,10 @@ namespace apiEndpointNameSpace.Interfaces
 
     }
 
-    public interface IAuthorizationService
+        public interface IFirebaseAuthService
     {
-        Task<bool> CanAccessChargerDataAsync(ClaimsPrincipal user, string chargerId);
+        Task<AuthResponse> AuthenticateUserAsync(string email, string password, List<String> chargerIDs);
+        Task<string> GenerateJwtTokenAsync(FirebaseToken decodedToken, List<string> allowedChargers);
     }
+
 }

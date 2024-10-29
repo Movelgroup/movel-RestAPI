@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models.ChargerData;
+using apiEndpointNameSpace.Models.Measurements;
 
 namespace apiEndpointNameSpace.Services
 {
