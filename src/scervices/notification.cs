@@ -73,9 +73,13 @@ namespace apiEndpointNameSpace.Services
         {
             try
             {
+                _logger.LogInformation("Connection attempt from connection ID: {ConnectionId}", Context.ConnectionId);
                 var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                _logger.LogInformation("User claims: {@Claims}", Context.User?.Claims.Select(c => new { c.Type, c.Value }));
+                
                 if (string.IsNullOrEmpty(userId))
                 {
+                    _logger.LogWarning("No user ID found in claims");
                     throw new HubException("Unauthorized connection attempt");
                 }
 
@@ -89,7 +93,7 @@ namespace apiEndpointNameSpace.Services
                 foreach (var chargerId in allowedChargers)
                 {
                     await Groups.AddToGroupAsync(Context.ConnectionId, chargerId);
-                    _logger.LogInformation($"User {userId} joined charger group: {chargerId}");
+                    _logger.LogInformation($"User {userId} joined charger group: {chargerId}", userId, chargerId);
                 }
 
                 await base.OnConnectedAsync();

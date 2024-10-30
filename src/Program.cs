@@ -97,6 +97,17 @@ namespace apiEndpointNameSpace
 
         public static void ConfigureServices(IServiceCollection services, FirestoreDb firestoreDb, IConfiguration configuration)
         {
+            // Add this logging at the start to debug configuration
+            var jwtKey = configuration["Jwt:Key"];
+            var jwtIssuer = configuration["Jwt:Issuer"];
+            var jwtAudience = configuration["Jwt:Audience"];
+            
+            if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+            {
+                throw new InvalidOperationException($"JWT Configuration missing. Key: {jwtKey != null}, Issuer: {jwtIssuer != null}, Audience: {jwtAudience != null}");
+            }
+
+            services.AddSingleton(firestoreDb);
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddCors(options =>
@@ -104,10 +115,11 @@ namespace apiEndpointNameSpace
                     options.AddPolicy("CorsPolicy", builder =>
                     {
                         builder
+                            .WithOrigins("http://localhost:3000", "https://movelsoftwaremanager.web.app") // Replace with actual frontend URL
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()
-                            .WithOrigins("http://localhost:3000", "https://movelsoftwaremanager.web.app"); // Replace with actual frontend URL
+                            .SetIsOriginAllowed(_ => true); // TODO: remove in production
                     });
                 });
 
@@ -173,13 +185,18 @@ namespace apiEndpointNameSpace
                 app.UseSwaggerUI();
             }
 
-            app.UseCors("CorsPolicy");
             app.UseRouting();
+            app.UseCors("CorsPolicy");
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+            
             app.UseWebSockets();
             app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.MapHub<ChargerHub>("/chargerhub");
+
             app.MapControllers();
+            app.MapHub<ChargerHub>("/chargerhub")
+                .RequireCors("CorsPolicy");
 
             app.Logger.LogInformation("SignalR Hub mapped at: /chargerhub");
         }

@@ -12,10 +12,12 @@ using System.IdentityModel.Tokens.Jwt;
 using apiEndpointNameSpace.Services;
 using System.Globalization;
 using Microsoft.Extensions.Localization;
+using Microsoft.AspNetCore.Cors;
 
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableCors("CorsPolicy")] 
 public class SignalRAuthController : ControllerBase
 {
     private readonly ILogger<SignalRAuthController> _logger;
@@ -41,6 +43,8 @@ public class SignalRAuthController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("Received connection request for email: {Email}", request.Email);
+
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
             {
                 return BadRequest("Email and Password are required");
@@ -50,8 +54,12 @@ public class SignalRAuthController : ControllerBase
 
             if (!authResponse.Success)
             {
+                _logger.LogWarning("Authentication failed for email: {Email}, Error: {Error}", 
+                    request.Email, authResponse.ErrorMessage);
                 return Unauthorized(new { message = authResponse.ErrorMessage });
             }
+
+            _logger.LogInformation("Successfully authenticated user: {Email}", request.Email);
 
             return Ok(new 
             { 
@@ -62,8 +70,8 @@ public class SignalRAuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during authentication");
-            return StatusCode(500, "Authentication failed");
+            _logger.LogError(ex, "Error during authentication for email: {Email}", request.Email);
+            return StatusCode(500, new { message = "Authentication failed", error = ex.Message });
         }
     }
 }

@@ -43,21 +43,34 @@ namespace apiEndpointNameSpace.Services
                         ErrorMessage = "User not found" 
                     };
                 }
-              
-                // Create claims including allowed chargers
-                var customClaims = new Dictionary<string, object>
+
+                // Instead of verifying the custom token, we'll use the user's UID directly
+                var claims = new List<Claim>
                 {
-                    { "allowedChargers", chargerIDs }
+                    new Claim(ClaimTypes.NameIdentifier, userRecord.Uid),
+                    new Claim(ClaimTypes.Email, userRecord.Email ?? ""),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 };
 
-                // Create a custom token with claims
-                var customToken = await _firebaseAuth.CreateCustomTokenAsync(userRecord.Uid, customClaims);
-                
-                // Verify the token
-                var decodedToken = await _firebaseAuth.VerifyIdTokenAsync(customToken);
+                // Add allowed chargers as claims
+                claims.AddRange(chargerIDs.Select(chargerId => 
+                new Claim("allowedCharger", chargerId)));
 
-                // Generate our application's JWT token
-                var jwtToken = await GenerateJwtTokenAsync(decodedToken, chargerIDs);
+                // Generate our application's JWT token directly
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not configured")));
+                var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var tokenLifetimeHours = _configuration.GetValue<int>("Jwt:TokenLifetimeHours", 24);
+
+                var token = new JwtSecurityToken(
+                    issuer: _configuration["Jwt:Issuer"],
+                    audience: _configuration["Jwt:Audience"],
+                    claims: claims,
+                    expires: DateTime.UtcNow.AddHours(tokenLifetimeHours),
+                    signingCredentials: credentials
+                );
+
+                 var jwtToken = new JwtSecurityTokenHandler().WriteToken(token);
 
                 return new AuthResponse
                 {
