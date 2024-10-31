@@ -2,13 +2,14 @@
 using apiEndpointNameSpace.Services;
 using apiEndpointNameSpace.Interfaces;
 using NReco.Logging.File;
-using Google.Cloud.Firestore;
 using Newtonsoft.Json.Linq;
+using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Google.Cloud.SecretManager.V1;
 
 
 namespace apiEndpointNameSpace
@@ -35,6 +36,9 @@ namespace apiEndpointNameSpace
             // Configure the HTTP request pipeline.
             ConfigureApp(app);
 
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            app.Urls.Add($"http://0.0.0.0:{port}");
+
             app.Run();
 
         }
@@ -42,21 +46,39 @@ namespace apiEndpointNameSpace
         private static FirestoreDb InitializeFirestoreDb(IConfiguration configuration)
         {
             string projectId = configuration["GoogleCloudProjectId"]
-                ?? throw new InvalidOperationException("GoogleCloudProjectId is not set in the configuration");
+                ?? Environment.GetEnvironmentVariable("GOOGLE_CLOUD_PROJECT")
+                ?? throw new InvalidOperationException("GoogleCloudProjectId is not set");
 
+            // In Cloud Run, we'll use the default service account
+            if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
+            {
+                return new FirestoreDbBuilder
+                {
+                    ProjectId = projectId,
+                    // In Cloud Run, we don't need to specify credentials
+                    // It will use the default service account
+                }.Build();
+            }
+
+            // Local development with service account file
+            string? credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_SERVICE_ACCOUNT");
+            if (!string.IsNullOrEmpty(credentialsJson))
+            {
+                // Create a temporary file for the credentials
+                var tempPath = Path.GetTempFileName();
+                File.WriteAllText(tempPath, credentialsJson);
+
+                return new FirestoreDbBuilder
+                {
+                    ProjectId = projectId,
+                    CredentialsPath = tempPath
+                }.Build();
+            }
+
+            // Fallback to local credentials file
             string credentialsPath = configuration["GoogleApplicationCredentials"]
                 ?? Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS")
-                ?? throw new InvalidOperationException("Google Application Credentials path is not set");
-
-            Console.WriteLine(projectId);
-            Console.WriteLine(credentialsPath);
-            JObject parsed = JObject.Parse(File.ReadAllText(credentialsPath));
-
-            foreach (var pair in parsed)
-        {
-            Console.WriteLine("{0}: {1}", pair.Key, pair.Value);
-        }
-
+                ?? throw new InvalidOperationException("No credentials available");
 
             return new FirestoreDbBuilder
             {
@@ -78,20 +100,44 @@ namespace apiEndpointNameSpace
 
         private static void InitializeFirebaseAuth(IConfiguration configuration)
         {
-            // Check if Firebase is already initialized
-            if (FirebaseApp.DefaultInstance == null)
-            {
-                string credentialsPath = configuration["GoogleApplicationCredentials"]
-                    ?? Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS")
-                    ?? throw new InvalidOperationException("Google Application Credentials path is not set");
+            if (FirebaseApp.DefaultInstance != null) return;
 
+            // In Cloud Run
+            if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
+            {
                 FirebaseApp.Create(new AppOptions
                 {
-                    Credential = GoogleCredential.FromFile(credentialsPath),
+                    Credential = GoogleCredential.GetApplicationDefault(),
                     ProjectId = configuration["GoogleCloudProjectId"]
                 });
+                return;
             }
+
+            // Local development with service account JSON
+            string? credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_SERVICE_ACCOUNT");
+            if (!string.IsNullOrEmpty(credentialsJson))
+            {
+                var credential = GoogleCredential.FromJson(credentialsJson);
+                FirebaseApp.Create(new AppOptions
+                {
+                    Credential = credential,
+                    ProjectId = configuration["GoogleCloudProjectId"]
+                });
+                return;
+            }
+
+            // Fallback to local credentials file
+            string credentialsPath = configuration["GoogleApplicationCredentials"]
+                ?? Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS")
+                ?? throw new InvalidOperationException("No credentials available");
+
+            FirebaseApp.Create(new AppOptions
+            {
+                Credential = GoogleCredential.FromFile(credentialsPath),
+                ProjectId = configuration["GoogleCloudProjectId"]
+            });
         }
+
 
 
 

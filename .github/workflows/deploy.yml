@@ -1,0 +1,40 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  PROJECT_ID: movelsoftwaremanager
+  SERVICE_NAME: rest-api
+  REGION: us-central1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        service_account_key: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+        project_id: ${{ env.PROJECT_ID }}
+
+    - name: Configure Docker
+      run: gcloud auth configure-docker
+
+    - name: Build and Push Image
+      run: |
+        docker build -t gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} .
+        docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }}
+
+    - name: Deploy to Cloud Run
+      env:
+        GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+      run: |
+        gcloud run deploy $SERVICE_NAME \
+          --image gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} \
+          --platform managed \
+          --region $REGION \
+          --allow-unauthenticated
