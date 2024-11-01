@@ -32,6 +32,33 @@ namespace apiEndpointNameSpace.Services
         {
             try
             {
+                _logger.LogInformation("Starting authentication for email: {Email}", email);
+
+                if (_firebaseAuth == null)
+                {
+                    _logger.LogError("FirebaseAuth is null - Firebase not properly initialized");
+                    return new AuthResponse 
+                    { 
+                        Success = false, 
+                        ErrorMessage = "Firebase authentication not initialized" 
+                    };
+                }
+
+                // Check JWT configuration
+                var jwtKey = _configuration["Jwt:Key"];
+                var jwtIssuer = _configuration["Jwt:Issuer"];
+                var jwtAudience = _configuration["Jwt:Audience"];
+
+                if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+                {
+                    _logger.LogError("JWT configuration missing. Key: {KeyExists}, Issuer: {IssuerExists}, Audience: {AudienceExists}",
+                        !string.IsNullOrEmpty(jwtKey),
+                        !string.IsNullOrEmpty(jwtIssuer),
+                        !string.IsNullOrEmpty(jwtAudience));
+                    
+                    throw new InvalidOperationException("JWT configuration is incomplete");
+                }
+
                 // First, verify the user exists in Firebase
                 var userRecord = await _firebaseAuth.GetUserByEmailAsync(email);
                 
@@ -87,7 +114,7 @@ namespace apiEndpointNameSpace.Services
                 return new AuthResponse
                 {
                     Success = false,
-                    ErrorMessage = "Authentication failed"
+                    ErrorMessage = $"Authentication failed: {ex.Message}"
                 };
             }
         }

@@ -61,17 +61,28 @@ public class SignalRAuthController : ControllerBase
 
             _logger.LogInformation("Successfully authenticated user: {Email}", request.Email);
 
-            return Ok(new 
+            var response = (new 
             { 
                 token = authResponse.Token,
                 expires_in = 3600, // 1 hour
                 token_type = "Bearer"
             });
+
+            // Ensure CORS headers are added
+            Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:3000");
+            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during authentication for email: {Email}", request.Email);
-            return StatusCode(500, new { message = "Authentication failed", error = ex.Message });
+            _logger.LogError(ex, "Error during authentication for email: {Email}. Stack trace: {StackTrace}", 
+                request.Email, ex.StackTrace);
+            return StatusCode(500, new { 
+                message = "Authentication failed", 
+                error = ex.Message,
+                stackTrace = ex.StackTrace // Be careful with this in production
+            });
         }
     }
 }
