@@ -161,11 +161,16 @@ namespace apiEndpointNameSpace
                     options.AddPolicy("CorsPolicy", builder =>
                     {
                         builder
-                            .WithOrigins("http://localhost:3000", "https://movelsoftwaremanager.web.app") // Replace with actual frontend URL
+                            .WithOrigins(
+                                "http://localhost:3000",
+                                "https://movelsoftwaremanager.web.app",
+                                "https://movelsoftwaremanager.firebaseapp.com")  // Firebase hosting alternate domain
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()
-                            .SetIsOriginAllowed(_ => true); // TODO: remove in production
+                            .WithHeaders("Authorization", "Content-Type", "Accept", "Origin")
+                            .WithMethods("GET", "POST", "OPTIONS"); // Add OPTIONS method explicitly
+                            //.SetIsOriginAllowed(_ => true); // TODO: remove in production
                     });
                 });
 
@@ -231,8 +236,8 @@ namespace apiEndpointNameSpace
                 app.UseSwaggerUI();
             }
 
-            app.UseRouting();
             app.UseCors("CorsPolicy");
+            app.UseRouting();
 
             app.UseAuthentication();
             app.UseAuthorization();
