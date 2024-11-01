@@ -7,7 +7,7 @@ on:
 env:
   PROJECT_ID: movelsoftwaremanager
   SERVICE_NAME: rest-api
-  REGION: europe-north1  # Make sure this matches your desired region
+  REGION: europe-north1
 
 jobs:
   deploy:
