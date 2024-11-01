@@ -7,19 +7,27 @@ on:
 env:
   PROJECT_ID: movelsoftwaremanager
   SERVICE_NAME: rest-api
-  REGION: us-central1
+  REGION: europe-north1  # Make sure this matches your desired region
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
+    permissions:
+      contents: 'read'
+      id-token: 'write'
 
-    - name: Setup Google Cloud CLI
-      uses: google-github-actions/setup-gcloud@v0
+    steps:
+    - uses: actions/checkout@v3
+
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v2'
       with:
-        service_account_key: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-        project_id: ${{ env.PROJECT_ID }}
+        workload_identity_provider: 'projects/720640884749/locations/global/workloadIdentityPools/github/providers/my-repo'
+        service_account: 'github-actions@movelsoftwaremanager.iam.gserviceaccount.com'
+        project_id: 'movelsoftwaremanager'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v2'
 
     - name: Configure Docker
       run: gcloud auth configure-docker
@@ -30,8 +38,6 @@ jobs:
         docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }}
 
     - name: Deploy to Cloud Run
-      env:
-        GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
       run: |
         gcloud run deploy $SERVICE_NAME \
           --image gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} \
