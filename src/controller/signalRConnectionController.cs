@@ -35,8 +35,8 @@ public class SignalRAuthController : ControllerBase
     {
         // public string Email { get; set; } = string.Empty;
         // public string Password { get; set; } = string.Empty;
-        public string token { get; set; } = string.Empty;
-        public List<String> ChargerIDs { get; set; } = ["null"];
+        public string apiKey { get; set; } = string.Empty;
+        public List<String> chargerIDs { get; set; } = ["null"];
     }
 
     [HttpPost("connect")]
@@ -48,11 +48,12 @@ public class SignalRAuthController : ControllerBase
 
             // if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
             // {
-            //     return BadRequest("Email and Password are required");
+            //     return BadRequest("Email and Password are required");436
+            
             // }
 
             // var authResponse = await _firebaseAuthService.AuthenticateUserMailAsync(request.Email, request.Password, request.ChargerIDs);
-            var authResponse = await _firebaseAuthService.AuthenticateUserTokenAsync(request.token, request.ChargerIDs);
+            var authResponse = await _firebaseAuthService.AuthenticateUserTokenAsync(request.apiKey, request.chargerIDs);
 
             if (!authResponse.Success)
             {

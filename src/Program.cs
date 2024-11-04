@@ -101,20 +101,20 @@ namespace apiEndpointNameSpace
         private static void InitializeFirebaseAuth(IConfiguration configuration)
         {
             if (FirebaseApp.DefaultInstance != null) return;
-
+            
             // In Cloud Run
-            if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
+            if (Environment.GetEnvironmentVariable("movel_app_scerviceAccount") != null)
             {
                 FirebaseApp.Create(new AppOptions
                 {
                     Credential = GoogleCredential.GetApplicationDefault(),
-                    ProjectId = configuration["GoogleCloudProjectId"]
+                    ProjectId = configuration["GoogleCloudProjectId_movel_app"]
                 });
                 return;
             }
 
             // Local development with service account JSON
-            string? credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_SERVICE_ACCOUNT");
+            string? credentialsJson = Environment.GetEnvironmentVariable("movel_app_scerviceAccount");
             if (!string.IsNullOrEmpty(credentialsJson))
             {
                 var credential = GoogleCredential.FromJson(credentialsJson);
