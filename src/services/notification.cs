@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models.ChargerData;
 using apiEndpointNameSpace.Models.Measurements;
-using apiEndpointNameSpace.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;

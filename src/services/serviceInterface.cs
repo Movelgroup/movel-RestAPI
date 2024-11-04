@@ -37,7 +37,9 @@ namespace apiEndpointNameSpace.Interfaces
 
         public interface IFirebaseAuthService
     {
-        Task<AuthResponse> AuthenticateUserAsync(string email, string password, List<String> chargerIDs);
+        Task<AuthResponse> AuthenticateUserMailAsync(string email, string password, List<String> chargerIDs);
+        Task<AuthResponse> AuthenticateUserTokenAsync(string token, List<String> chargerIDs);
+
         Task<string> GenerateJwtTokenAsync(FirebaseToken decodedToken, List<string> allowedChargers);
     }
 

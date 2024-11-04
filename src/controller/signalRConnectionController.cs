@@ -33,8 +33,9 @@ public class SignalRAuthController : ControllerBase
 
     public class SignalRConnectionRequest
     {
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+        // public string Email { get; set; } = string.Empty;
+        // public string Password { get; set; } = string.Empty;
+        public string token { get; set; } = string.Empty;
         public List<String> ChargerIDs { get; set; } = ["null"];
     }
 
@@ -43,23 +44,23 @@ public class SignalRAuthController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Received connection request for email: {Email}", request.Email);
+            // _logger.LogInformation("Received connection request for email: {Email}", request.Email);
 
-            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
-            {
-                return BadRequest("Email and Password are required");
-            }
+            // if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+            // {
+            //     return BadRequest("Email and Password are required");
+            // }
 
-            var authResponse = await _firebaseAuthService.AuthenticateUserAsync(request.Email, request.Password, request.ChargerIDs);
+            // var authResponse = await _firebaseAuthService.AuthenticateUserMailAsync(request.Email, request.Password, request.ChargerIDs);
+            var authResponse = await _firebaseAuthService.AuthenticateUserTokenAsync(request.token, request.ChargerIDs);
 
             if (!authResponse.Success)
             {
-                _logger.LogWarning("Authentication failed for email: {Email}, Error: {Error}", 
-                    request.Email, authResponse.ErrorMessage);
+                _logger.LogWarning("Authentication failed", authResponse.ErrorMessage);
                 return Unauthorized(new { message = authResponse.ErrorMessage });
             }
 
-            _logger.LogInformation("Successfully authenticated user: {Email}", request.Email);
+            _logger.LogInformation("Successfully authenticated user: ");
 
             var response = (new 
             { 
@@ -76,8 +77,7 @@ public class SignalRAuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during authentication for email: {Email}. Stack trace: {StackTrace}", 
-                request.Email, ex.StackTrace);
+            _logger.LogError(ex, "Error during authentication. Stack trace: {StackTrace}", ex.StackTrace);
             return StatusCode(500, new { 
                 message = "Authentication failed", 
                 error = ex.Message,
