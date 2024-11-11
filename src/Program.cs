@@ -115,7 +115,7 @@ namespace apiEndpointNameSpace
                 FirebaseApp.Create(new AppOptions
                 {
                     Credential = GoogleCredential.GetApplicationDefault(),
-                    ProjectId = configuration["GoogleCloudProjectId_movel_app"]
+                    ProjectId = configuration["GoogleCloudProjectId"]
                 });
                 return;
             }
