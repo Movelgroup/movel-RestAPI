@@ -17,7 +17,10 @@ COPY --from=build /app/publish .
 # Configure for Cloud Run
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 ENV PORT=8080
-EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Set the entry point using your actual DLL name
 ENTRYPOINT ["dotnet", "rest-api.dll"]

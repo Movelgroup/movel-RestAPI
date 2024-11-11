@@ -20,6 +20,12 @@ namespace apiEndpointNameSpace
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(int.Parse(port));
+            });
+
             // Configure logging
             ConfigureLogging(builder);
 
@@ -29,13 +35,11 @@ namespace apiEndpointNameSpace
             // Add services to the container.
             ConfigureServices(builder.Services, firestoreDb, builder.Configuration);
 
-            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-            builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-            // app.Urls.Add($"http://0.0.0.0:{port}");
+
 
             var app = builder.Build();
 
-            app.Logger.LogInformation("Starting web application");
+            app.Logger.LogInformation("Starting web application on port {port}", port);
 
             // Configure the HTTP request pipeline.
             ConfigureApp(app);
@@ -252,6 +256,7 @@ namespace apiEndpointNameSpace
             app.MapHub<ChargerHub>("/chargerhub")
                 .RequireCors("CorsPolicy");
 
+            app.MapGet("/health", () => "Healthy");  // Add this line
             app.Logger.LogInformation("SignalR Hub mapped at: /chargerhub");
         }
     }
