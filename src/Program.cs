@@ -29,6 +29,10 @@ namespace apiEndpointNameSpace
             // Add services to the container.
             ConfigureServices(builder.Services, firestoreDb, builder.Configuration);
 
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+            // app.Urls.Add($"http://0.0.0.0:{port}");
+
             var app = builder.Build();
 
             app.Logger.LogInformation("Starting web application");
@@ -36,8 +40,7 @@ namespace apiEndpointNameSpace
             // Configure the HTTP request pipeline.
             ConfigureApp(app);
 
-            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-            app.Urls.Add($"http://0.0.0.0:{port}");
+
 
             app.Run();
 
