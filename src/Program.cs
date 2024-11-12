@@ -11,7 +11,6 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
 
-// Redeploy
 namespace apiEndpointNameSpace
 {
     public class Program
