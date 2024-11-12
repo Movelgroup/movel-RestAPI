@@ -243,14 +243,12 @@ namespace apiEndpointNameSpace
                 app.UseSwaggerUI();
             }
 
-            app.UseCors("CorsPolicy");
+            app.UseHttpsRedirection();
             app.UseRouting();
-
+            app.UseCors("CorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
-            
             app.UseWebSockets();
-            app.UseHttpsRedirection();
 
             app.MapControllers();
             app.MapHub<ChargerHub>("/chargerhub")
