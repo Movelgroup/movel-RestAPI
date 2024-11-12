@@ -110,7 +110,7 @@ namespace apiEndpointNameSpace
             if (FirebaseApp.DefaultInstance != null) return;
             
             // In Cloud Run
-            if (Environment.GetEnvironmentVariable("movel_app_scerviceAccount") != null)
+            if (Environment.GetEnvironmentVariable("GOOGLE_SERVICE_ACCOUNT") != null)
             {
                 FirebaseApp.Create(new AppOptions
                 {
