@@ -174,6 +174,7 @@ namespace apiEndpointNameSpace
                                 "https://movelsoftwaremanager.firebaseapp.com")
                             .AllowAnyMethod()
                             .AllowAnyHeader()
+                            .AllowCredentials()  
                             .WithExposedHeaders("Content-Disposition")
                             .WithHeaders("Authorization", "Content-Type", "Accept");
                     });
@@ -256,8 +257,8 @@ namespace apiEndpointNameSpace
             }
 
             app.UseHttpsRedirection();
-            app.UseCors();
             app.UseRouting();
+            app.UseCors();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseWebSockets();
@@ -274,7 +275,7 @@ namespace apiEndpointNameSpace
                     endpoints.MapGet("/health", () => "Healthy")
                             .RequireCors("ApiPolicy");
                 }); 
-                
+
             app.Logger.LogInformation("SignalR Hub mapped at: /chargerhub");
         }
     }
