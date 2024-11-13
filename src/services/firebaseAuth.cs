@@ -151,9 +151,8 @@ namespace apiEndpointNameSpace.Services
                 }
 
                 // Verify the Firebase ID token
-                FirebaseToken FBdecodedToken = await _firebaseAuth.VerifyIdTokenAsync(FBauthToken); // make cleare difference between firebase token and signalR token
-                string stringFBdecodedToken = FBdecodedToken.ToString();
-                if (stringFBdecodedToken == null ^ FBdecodedToken == null) // ^ = OR
+                FirebaseToken decodedToken = await _firebaseAuth.VerifyIdTokenAsync(FBauthToken);
+                if (decodedToken == null)
                 {
                     return new AuthResponse 
                     { 
@@ -162,9 +161,8 @@ namespace apiEndpointNameSpace.Services
                     };
                 }
 
-                // First, verify the user exists in Firebase
-                // var userRecord = await _firebaseAuth.GetUserByEmailAsync(email);
-                var userRecord = await _firebaseAuth.GetUserAsync(stringFBdecodedToken); // Check if the token is valid.
+                // Get user using the Uid from the decoded token
+                var userRecord = await _firebaseAuth.GetUserAsync(decodedToken.Uid);
                 
                 if (userRecord == null)
                 {
