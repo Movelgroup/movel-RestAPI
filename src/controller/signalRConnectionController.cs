@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Cors;
 
 [ApiController]
 [Route("api/[controller]")]
-[EnableCors("CorsPolicy")] 
+[EnableCors("SignalRPolicy")]
 public class SignalRAuthController : ControllerBase
 {
     private readonly ILogger<SignalRAuthController> _logger;
