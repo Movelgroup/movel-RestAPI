@@ -71,8 +71,8 @@ public class SignalRAuthController : ControllerBase
             });
 
             // Ensure CORS headers are added
-            Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:3000");
-            Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            // Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:3000");
+            // Response.Headers.Append("Access-Control-Allow-Credentials", "true");
             
             return Ok(response);
         }

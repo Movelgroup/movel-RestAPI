@@ -6,11 +6,13 @@ using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models.ChargerData;
 using apiEndpointNameSpace.Models.Measurements;
 using System.Net;
+using Microsoft.AspNetCore.Cors;
 
 namespace apiEndpointNameSpace.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableCors("ApiPolicy")]
     public class PushAPIController : ControllerBase
     {
         private readonly IDataProcessor _dataProcessor;

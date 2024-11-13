@@ -164,19 +164,33 @@ namespace apiEndpointNameSpace
             services.AddEndpointsApiExplorer();
             services.AddCors(options =>
                 {
-                    options.AddPolicy("CorsPolicy", builder =>
+                    // Policy for regular API endpoints
+                    options.AddPolicy("ApiPolicy", builder =>
                     {
                         builder
                             .WithOrigins(
                                 "http://localhost:3000",
                                 "https://movelsoftwaremanager.web.app",
-                                "https://movelsoftwaremanager.firebaseapp.com")  // Firebase hosting alternate domain
+                                "https://movelsoftwaremanager.firebaseapp.com")
                             .AllowAnyMethod()
                             .AllowAnyHeader()
-                            .AllowCredentials()
-                            .WithHeaders("Authorization", "Content-Type", "Accept", "Origin")
-                            .WithMethods("GET", "POST", "OPTIONS"); // Add OPTIONS method explicitly
-                            //.SetIsOriginAllowed(_ => true); // TODO: remove in production
+                            .WithExposedHeaders("Content-Disposition")
+                            .WithHeaders("Authorization", "Content-Type", "Accept");
+                    });
+
+                    // Separate policy for SignalR
+                    options.AddPolicy("SignalRPolicy", builder =>
+                    {
+                        builder
+                            .WithOrigins(
+                                "http://localhost:3000",
+                                "https://movelsoftwaremanager.web.app",
+                                "https://movelsoftwaremanager.firebaseapp.com")
+                            .AllowAnyMethod()
+                            .AllowAnyHeader()
+                            .AllowCredentials()  // Required for SignalR
+                            .WithHeaders("X-Requested-With", "Content-Type", "Accept", "Authorization")
+                            .WithExposedHeaders("Negotiate");  // Important for SignalR negotiation
                     });
                 });
 
@@ -225,12 +239,11 @@ namespace apiEndpointNameSpace
             });
             services.AddSingleton<INotificationService, NotificationService>();
             services.AddSingleton<IFirebaseAuthService, FirebaseAuthService>();
-            services.AddSignalR(option =>
+            services.AddSignalR(hubOptions =>
             {
-                option.EnableDetailedErrors = true;
-            });
-
-            
+                hubOptions.EnableDetailedErrors = true;
+                hubOptions.HandshakeTimeout = TimeSpan.FromSeconds(30);
+            }).AddJsonProtocol();
         }
 
 
@@ -243,17 +256,25 @@ namespace apiEndpointNameSpace
             }
 
             app.UseHttpsRedirection();
+            app.UseCors();
             app.UseRouting();
-            app.UseCors("CorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseWebSockets();
 
-            app.MapControllers();
-            app.MapHub<ChargerHub>("/chargerhub")
-                .RequireCors("CorsPolicy");
-
-            app.MapGet("/health", () => "Healthy");  // Add this line
+            app.UseEndpoints(endpoints =>
+                {
+                    // Apply specific CORS policies to different endpoints
+                    endpoints.MapControllers()
+                            .RequireCors("ApiPolicy");
+                    
+                    endpoints.MapHub<ChargerHub>("/chargerhub")
+                            .RequireCors("SignalRPolicy");
+                    
+                    endpoints.MapGet("/health", () => "Healthy")
+                            .RequireCors("ApiPolicy");
+                }); 
+                
             app.Logger.LogInformation("SignalR Hub mapped at: /chargerhub");
         }
     }
