@@ -190,8 +190,21 @@ namespace apiEndpointNameSpace
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()  // Required for SignalR
-                            .WithHeaders("X-Requested-With", "Content-Type", "Accept", "Authorization")
-                            .WithExposedHeaders("Negotiate");  // Important for SignalR negotiation
+                            .WithHeaders(
+                                "X-Requested-With",
+                                "Content-Type",
+                                "Accept",
+                                "Authorization",
+                                "x-signalr-user-agent",  // Add this specific header
+                                "x-requested-with",      // Sometimes needed in lowercase
+                                "x-signalr-protocol"     // Add this SignalR specific header
+                            )
+                            .WithExposedHeaders(
+                                        "Negotiate",
+                                        "X-SignalR-Protocol",
+                                        "X-SignalR-Version",
+                                        "X-SignalR-Error"
+                            );
                     });
                 });
 
