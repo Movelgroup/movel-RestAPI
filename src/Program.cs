@@ -57,7 +57,7 @@ namespace apiEndpointNameSpace
 
             // In Cloud Run, we'll use the default service account
             if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
-            {
+            { 
                 return new FirestoreDbBuilder 
                 {
                     ProjectId = projectId,
