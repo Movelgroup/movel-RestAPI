@@ -48,7 +48,7 @@ namespace apiEndpointNameSpace
 
             app.Run();
 
-        }
+        } 
 
         private static FirestoreDb InitializeFirestoreDb(IConfiguration configuration)
         {
