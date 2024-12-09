@@ -5,9 +5,9 @@ on:
     branches: [ main ]
 
 env:
-  PROJECT_ID: movelsoftwaremanager
-  SERVICE_NAME: rest-api
-  REGION: europe-north1
+  PROJECT_ID: movel-app-4scpom
+  SERVICE_NAME: emablerapi-endpoint
+  REGION: europe-west1
 
 jobs:
   deploy:
@@ -23,8 +23,8 @@ jobs:
       uses: 'google-github-actions/auth@v2'
       with:
         workload_identity_provider: 'projects/720640884749/locations/global/workloadIdentityPools/github/providers/my-repo'
-        service_account: 'github-actions@movelsoftwaremanager.iam.gserviceaccount.com'
-        project_id: 'movelsoftwaremanager'
+        service_account: 'movel-app-4scpom@appspot.gserviceaccount.com'
+        project_id: 'movel-app-4scpom'
 
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v2'
