@@ -164,7 +164,7 @@ namespace apiEndpointNameSpace
             services.AddEndpointsApiExplorer();
             services.AddCors(options =>
                 {
-                    // Policy for regular API endpoints
+                    // Policy for regular API endpoints 
                     options.AddPolicy("ApiPolicy", builder =>
                     {
                         builder
