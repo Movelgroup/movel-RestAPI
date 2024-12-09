@@ -36,7 +36,7 @@ public class SignalRAuthController : ControllerBase
         // public string Email { get; set; } = string.Empty;
         // public string Password { get; set; } = string.Empty;
         public string apiKey { get; set; } = string.Empty;
-        public List<String> chargerIDs { get; set; } = ["null"];
+        public List<String> chargerIDs { get; set; } = new List<string>();
     }
 
     [HttpPost("connect")]

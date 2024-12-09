@@ -10,6 +10,7 @@ using System.Text;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
+using System.Security.Principal;
 
 namespace apiEndpointNameSpace
 {
@@ -51,9 +52,8 @@ namespace apiEndpointNameSpace
 
         private static FirestoreDb InitializeFirestoreDb(IConfiguration configuration)
         {
-            string projectId = configuration["GoogleCloudProjectId"]
-                ?? Environment.GetEnvironmentVariable("GOOGLE_CLOUD_PROJECT")
-                ?? throw new InvalidOperationException("GoogleCloudProjectId is not set");
+            string projectId = configuration["GoogleCloudProjectId_movel_app"]
+                ?? throw new InvalidOperationException("GoogleCloudProjectId_movel_app is not set");
 
             // In Cloud Run, we'll use the default service account
             if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
