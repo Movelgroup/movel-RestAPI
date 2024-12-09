@@ -18,8 +18,11 @@ COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 ENV PORT=8080
 
+# Expose port (optional)
+EXPOSE 8080
+
 # Health check
-HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Set the entry point using your actual DLL name
