@@ -56,7 +56,7 @@ namespace apiEndpointNameSpace
                 ?? throw new InvalidOperationException("GoogleCloudProjectId_movel_app is not set");
 
             // In Cloud Run, we'll use the default service account
-            if (Environment.GetEnvironmentVariable("K_SERVICE") != null)
+            if (Environment.GetEnvironmentVariable("K_SERVICE") != null) 
             {
                 return new FirestoreDbBuilder 
                 {
