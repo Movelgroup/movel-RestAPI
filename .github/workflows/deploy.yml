@@ -22,7 +22,7 @@ jobs:
     - id: 'auth'
       uses: 'google-github-actions/auth@v2'
       with:
-        workload_identity_provider: 'projects/720640884749/locations/global/workloadIdentityPools/github/providers/my-repo'
+        workload_identity_provider: 'projects/390725443005/locations/global/workloadIdentityPools/github/providers/my-repo'
         service_account: 'movel-app-4scpom@appspot.gserviceaccount.com'
         project_id: 'movel-app-4scpom'
 
