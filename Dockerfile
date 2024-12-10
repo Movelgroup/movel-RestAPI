@@ -12,7 +12,7 @@ RUN dotnet publish -c Release -o /publish
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /source/publish .
+COPY --from=build /publish .
 
 # Configure for Cloud Run
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
