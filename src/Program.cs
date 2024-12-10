@@ -117,7 +117,7 @@ namespace apiEndpointNameSpace
                     ProjectId = configuration["GoogleCloudProjectId"]
                 });
                 return;
-            }
+            } 
 
             // Local development with service account JSON
             string? credentialsJson = Environment.GetEnvironmentVariable("movel_app_scerviceAccount");
