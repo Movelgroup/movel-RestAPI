@@ -18,18 +18,12 @@ using Microsoft.AspNetCore.Cors;
 [ApiController]
 [Route("api/[controller]")]
 [EnableCors("SignalRPolicy")]
-public class SignalRAuthController : ControllerBase
+public class SignalRAuthController(
+    ILogger<SignalRAuthController> logger,
+    IFirebaseAuthService firebaseAuthService) : ControllerBase
 {
-    private readonly ILogger<SignalRAuthController> _logger;
-    private readonly IFirebaseAuthService _firebaseAuthService;
-
-    public SignalRAuthController(
-        ILogger<SignalRAuthController> logger,
-        IFirebaseAuthService firebaseAuthService)
-    {
-        _logger = logger;
-        _firebaseAuthService = firebaseAuthService;
-    }
+    private readonly ILogger<SignalRAuthController> _logger = logger;
+    private readonly IFirebaseAuthService _firebaseAuthService = firebaseAuthService;
 
     public class SignalRConnectionRequest
     {
