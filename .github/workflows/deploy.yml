@@ -43,4 +43,5 @@ jobs:
           --image gcr.io/$PROJECT_ID/$SERVICE_NAME:${{ github.sha }} \
           --platform managed \
           --region $REGION \
-          --allow-unauthenticated
+          --allow-unauthenticated \
+          --timeout=600
