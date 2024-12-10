@@ -79,7 +79,7 @@ namespace apiEndpointNameSpace
                     ProjectId = projectId,
                     CredentialsPath = tempPath
                 }.Build();
-            } 
+            }
 
             else{
                 throw new InvalidOperationException("No credentials available");
