@@ -81,16 +81,9 @@ namespace apiEndpointNameSpace
                 }.Build();
             }
 
-            // Fallback to local credentials file
-            string credentialsPath = configuration["GoogleApplicationCredentials"]
-                ?? Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS")
-                ?? throw new InvalidOperationException("No credentials available");
-
-            return new FirestoreDbBuilder
-            {
-                ProjectId = projectId,
-                CredentialsPath = credentialsPath
-            }.Build();
+            else{
+                throw new InvalidOperationException("No credentials available");
+            }
         }
 
 
@@ -117,7 +110,7 @@ namespace apiEndpointNameSpace
                     ProjectId = configuration["GoogleCloudProjectId"]
                 });
                 return;
-            } 
+            }
 
             // Local development with service account JSON
             string? credentialsJson = Environment.GetEnvironmentVariable("movel_app_scerviceAccount");
@@ -132,16 +125,9 @@ namespace apiEndpointNameSpace
                 return;
             }
 
-            // Fallback to local credentials file
-            string credentialsPath = configuration["GoogleApplicationCredentials"]
-                ?? Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS")
-                ?? throw new InvalidOperationException("No credentials available");
-
-            FirebaseApp.Create(new AppOptions
-            {
-                Credential = GoogleCredential.FromFile(credentialsPath),
-                ProjectId = configuration["GoogleCloudProjectId"]
-            });
+            else{
+                throw new InvalidOperationException("No credentials available");
+            }
         }
 
 
