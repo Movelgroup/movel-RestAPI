@@ -6,7 +6,7 @@ on:
 
 env:
   PROJECT_ID: movel-app-4scpom
-  SERVICE_NAME: rest-api
+  SERVICE_NAME: emablerapi-endpoint
   REGION: europe-west1
 
 jobs:
