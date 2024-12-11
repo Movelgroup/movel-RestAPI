@@ -52,8 +52,8 @@ namespace apiEndpointNameSpace
 
         private static FirestoreDb InitializeFirestoreDb(IConfiguration configuration)
         {
-            string projectId = configuration["GoogleCloudProjectId_movel_app"]
-                ?? throw new InvalidOperationException("GoogleCloudProjectId_movel_app is not set");
+            string projectId = configuration["GoogleCloudProjectId"]
+                ?? throw new InvalidOperationException("GoogleCloudProjectId is not set");
 
             // In Cloud Run, we'll use the default service account
             if (Environment.GetEnvironmentVariable("K_SERVICE") != null) 
@@ -67,24 +67,19 @@ namespace apiEndpointNameSpace
             }
 
             // Local development with service account file
-            string? credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_SERVICE_ACCOUNT");
-            if (!string.IsNullOrEmpty(credentialsJson))
+            string? credentialsPath = configuration["movelAppServiceAccount"];
+            if (!string.IsNullOrEmpty(credentialsPath) && File.Exists(credentialsPath))
             {
-                // Create a temporary file for the credentials
-                var tempPath = Path.GetTempFileName();
-                File.WriteAllText(tempPath, credentialsJson);
-
+                Console.WriteLine($"Using credentials at path: {credentialsPath}");
                 return new FirestoreDbBuilder
                 {
                     ProjectId = projectId,
-                    CredentialsPath = tempPath
-                }.Build(); 
+                    CredentialsPath = credentialsPath
+                }.Build();
             }
 
-            else{
-                throw new InvalidOperationException("No credentials available");
+            throw new InvalidOperationException($"Credentials file not found at {credentialsPath}");
             }
-        }
 
 
         private static void ConfigureLogging(WebApplicationBuilder builder)
@@ -102,7 +97,7 @@ namespace apiEndpointNameSpace
             if (FirebaseApp.DefaultInstance != null) return;
             
             // In Cloud Run
-            if (Environment.GetEnvironmentVariable("GOOGLE_SERVICE_ACCOUNT") != null)
+            if (Environment.GetEnvironmentVariable("firebaseServiceAccount") != null)
             {
                 FirebaseApp.Create(new AppOptions
                 {
@@ -113,7 +108,7 @@ namespace apiEndpointNameSpace
             }
 
             // Local development with service account JSON
-            string? credentialsJson = Environment.GetEnvironmentVariable("movel_app_scerviceAccount");
+            string? credentialsJson = Environment.GetEnvironmentVariable("firebaseServiceAccount");
             if (!string.IsNullOrEmpty(credentialsJson))
             {
                 var credential = GoogleCredential.FromJson(credentialsJson);
