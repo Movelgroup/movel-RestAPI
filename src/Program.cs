@@ -95,35 +95,35 @@ namespace apiEndpointNameSpace
         private static void InitializeFirebaseAuth(IConfiguration configuration)
         {
             if (FirebaseApp.DefaultInstance != null) return;
-            
-            // In Cloud Run
-            if (Environment.GetEnvironmentVariable("firebaseServiceAccount") != null)
+
+            string? credentialsPath = configuration["firebaseServiceAccount"];
+            Console.WriteLine($"Service account path: {credentialsPath}");
+
+            if (!string.IsNullOrEmpty(credentialsPath) && File.Exists(credentialsPath))
             {
-                FirebaseApp.Create(new AppOptions
+                var jsonContent = File.ReadAllText(credentialsPath);
+                Console.WriteLine($"JSON Content: {jsonContent}");
+
+                try
                 {
-                    Credential = GoogleCredential.GetApplicationDefault(),
-                    ProjectId = configuration["GoogleCloudProjectId"]
-                });
+                    var credential = GoogleCredential.FromFile(credentialsPath);
+                    FirebaseApp.Create(new AppOptions
+                    {
+                        Credential = credential,
+                        ProjectId = configuration["GoogleCloudProjectId"]
+                    });
+                    Console.WriteLine("Firebase initialized successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading credentials: {ex.Message}");
+                }
                 return;
             }
 
-            // Local development with service account JSON
-            string? credentialsJson = Environment.GetEnvironmentVariable("firebaseServiceAccount");
-            if (!string.IsNullOrEmpty(credentialsJson))
-            {
-                var credential = GoogleCredential.FromJson(credentialsJson);
-                FirebaseApp.Create(new AppOptions
-                {
-                    Credential = credential,
-                    ProjectId = configuration["GoogleCloudProjectId"]
-                });
-                return;
-            }
-
-            else{
-                throw new InvalidOperationException("No credentials available");
-            }
+            throw new InvalidOperationException("Firebase credentials file not found or path not configured.");
         }
+
 
 
 
