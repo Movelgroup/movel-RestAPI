@@ -114,7 +114,7 @@ namespace apiEndpointNameSpace
                     });
                     Console.WriteLine("Firebase initialized successfully.");
                 }
-                catch (Exception ex)
+                catch (Exception ex) 
                 {
                     Console.WriteLine($"Error loading credentials: {ex.Message}");
                 }
