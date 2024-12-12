@@ -1,6 +1,7 @@
 # misc
 secrets/
 helpScripts/
+out/
 
 # .NET Core build folders
 bin/

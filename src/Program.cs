@@ -68,7 +68,7 @@ namespace apiEndpointNameSpace
 
             // Local development with service account file
             string? credentialsPath = configuration["movelAppServiceAccount"];
-            if (!string.IsNullOrEmpty(credentialsPath) && File.Exists(credentialsPath))
+            if (!string.IsNullOrEmpty(credentialsPath) )
             {
                 Console.WriteLine($"Using credentials at path: {credentialsPath}");
                 return new FirestoreDbBuilder
@@ -77,9 +77,9 @@ namespace apiEndpointNameSpace
                     CredentialsPath = credentialsPath
                 }.Build();
             }
-
+            else{
             throw new InvalidOperationException($"Credentials file not found at {credentialsPath}");
-            }
+            }}
 
 
         private static void ConfigureLogging(WebApplicationBuilder builder)
@@ -99,7 +99,7 @@ namespace apiEndpointNameSpace
             string? credentialsPath = configuration["firebaseServiceAccount"];
             Console.WriteLine($"Service account path: {credentialsPath}");
 
-            if (!string.IsNullOrEmpty(credentialsPath) && File.Exists(credentialsPath))
+            if ( string.IsNullOrEmpty(credentialsPath) == false )
             {
                 var jsonContent = File.ReadAllText(credentialsPath);
                 Console.WriteLine($"JSON Content: {jsonContent}");
@@ -259,9 +259,11 @@ namespace apiEndpointNameSpace
 
             app.UseEndpoints(endpoints =>
                 {
+                    
                     // Apply specific CORS policies to different endpoints
                     endpoints.MapControllers()
                             .RequireCors("ApiPolicy");
+
                     
                     endpoints.MapHub<ChargerHub>("/chargerhub")
                             .RequireCors("SignalRPolicy");
