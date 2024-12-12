@@ -117,7 +117,7 @@ namespace apiEndpointNameSpace
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error loading credentials: {ex.Message}");
-                }
+                } 
                 return;
             }
 
