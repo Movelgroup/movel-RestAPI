@@ -79,7 +79,7 @@ namespace apiEndpointNameSpace
             }
             else{
             throw new InvalidOperationException($"Credentials file not found at {credentialsPath}");
-            }}
+            }} 
 
 
         private static void ConfigureLogging(WebApplicationBuilder builder)
