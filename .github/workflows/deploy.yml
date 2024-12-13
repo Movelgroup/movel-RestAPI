@@ -19,15 +19,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - id: 'auth'
-      uses: 'google-github-actions/auth@v2'
-      with:
-        workload_identity_provider: 'projects/390725443005/locations/global/workloadIdentityPools/github-acitons/providers/github'
-        service_account: 'movel-app-4scpom@appspot.gserviceaccount.com'
-        project_id: 'movel-app-4scpom'
+    - name: Authenticate to Google Cloud
+      run: |
+        echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT }}" > "${HOME}/gcloud-service-key.json"
+        gcloud auth activate-service-account --key-file="${HOME}/gcloud-service-key.json"
+        gcloud config set project $PROJECT_ID
 
-    - name: 'Set up Cloud SDK'
-      uses: 'google-github-actions/setup-gcloud@v2'
+    - name: Verify Google Cloud Authentication
+      run: gcloud auth list
 
     - name: Configure Docker
       run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
