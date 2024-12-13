@@ -26,4 +26,4 @@ HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Set the entry point using your actual DLL name
-ENTRYPOINT ["dotnet", "rest-api.dll"]
+ENTRYPOINT ["dotnet", "movel-RestAPI.dll"]
