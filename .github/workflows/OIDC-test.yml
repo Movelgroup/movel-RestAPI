@@ -1,0 +1,5 @@
+- name: Get OIDC Token
+  run: |
+    echo "Token: $ACTIONS_ID_TOKEN"
+  env:
+    ACTIONS_ID_TOKEN: ${{ secrets.ACTIONS_ID_TOKEN }}
