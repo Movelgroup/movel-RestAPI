@@ -96,14 +96,26 @@ namespace apiEndpointNameSpace
         {
             if (FirebaseApp.DefaultInstance != null) return;
 
+            // Check if running in Cloud Run by verifying the presence of the K_SERVICE environment variable
+            bool isCloudRun = Environment.GetEnvironmentVariable("K_SERVICE") != null;
+
+            if (isCloudRun)
+            {
+                // Use default credentials provided by Cloud Run's service account
+                FirebaseApp.Create(new AppOptions
+                {
+                    ProjectId = configuration["GoogleCloudProjectId"]
+                });
+                Console.WriteLine("Firebase initialized with default credentials.");
+                return;
+            }
+
+            // Local development with service account file
             string? credentialsPath = configuration["firebaseServiceAccount"];
             Console.WriteLine($"Service account path: {credentialsPath}");
 
-            if ( string.IsNullOrEmpty(credentialsPath) == false )
+            if (!string.IsNullOrEmpty(credentialsPath))
             {
-                var jsonContent = File.ReadAllText(credentialsPath);
-                Console.WriteLine($"JSON Content: {jsonContent}");
-
                 try
                 {
                     var credential = GoogleCredential.FromFile(credentialsPath);
@@ -117,15 +129,13 @@ namespace apiEndpointNameSpace
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error loading credentials: {ex.Message}");
-                } 
+                    throw;
+                }
                 return;
             }
 
             throw new InvalidOperationException("Firebase credentials file not found or path not configured.");
         }
-
-
-
 
 
         public static void ConfigureServices(IServiceCollection services, FirestoreDb firestoreDb, IConfiguration configuration)
