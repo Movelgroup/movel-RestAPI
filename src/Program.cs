@@ -59,11 +59,14 @@ namespace apiEndpointNameSpace
             else
             {
                 bool isCloudRun = Environment.GetEnvironmentVariable("K_SERVICE") != null;
-
+                var credential = GoogleCredential.GetApplicationDefault();
+                Console.WriteLine($"Default credentials: {credential}");
+                
                 if (isCloudRun)
                 {
                     FirebaseApp.Create(new AppOptions
                     {
+                        Credential = credential,
                         ProjectId = configuration["GoogleCloudProjectId"]
                     });
                     Console.WriteLine("Firebase initialized with default credentials.");
@@ -73,10 +76,10 @@ namespace apiEndpointNameSpace
                     string? credentialsPath = configuration["firebaseServiceAccount"];
                     if (!string.IsNullOrEmpty(credentialsPath))
                     {
-                        var credential = GoogleCredential.FromFile(credentialsPath);
+                        var credentialLocal = GoogleCredential.FromFile(credentialsPath);
                         FirebaseApp.Create(new AppOptions
                         {
-                            Credential = credential,
+                            Credential = credentialLocal,
                             ProjectId = configuration["GoogleCloudProjectId"]
                         });
                         Console.WriteLine("Firebase initialized successfully with service account credentials.");
