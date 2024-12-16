@@ -52,34 +52,48 @@ namespace apiEndpointNameSpace
 
         private static FirestoreDb InitializeFirestoreDb(IConfiguration configuration)
         {
+            if (FirebaseApp.DefaultInstance != null)
+            {
+                Console.WriteLine("FirebaseApp already initialized.");
+            }
+            else
+            {
+                bool isCloudRun = Environment.GetEnvironmentVariable("K_SERVICE") != null;
+
+                if (isCloudRun)
+                {
+                    FirebaseApp.Create(new AppOptions
+                    {
+                        ProjectId = configuration["GoogleCloudProjectId"]
+                    });
+                    Console.WriteLine("Firebase initialized with default credentials.");
+                }
+                else
+                {
+                    string? credentialsPath = configuration["firebaseServiceAccount"];
+                    if (!string.IsNullOrEmpty(credentialsPath))
+                    {
+                        var credential = GoogleCredential.FromFile(credentialsPath);
+                        FirebaseApp.Create(new AppOptions
+                        {
+                            Credential = credential,
+                            ProjectId = configuration["GoogleCloudProjectId"]
+                        });
+                        Console.WriteLine("Firebase initialized successfully with service account credentials.");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Firebase credentials file not found or path not configured.");
+                    }
+                }
+            }
+
+            // Create and return the FirestoreDb instance
             string projectId = configuration["GoogleCloudProjectId"]
                 ?? throw new InvalidOperationException("GoogleCloudProjectId is not set");
 
-            // In Cloud Run, we'll use the default service account
-            if (Environment.GetEnvironmentVariable("K_SERVICE") != null) 
-            {
-                return new FirestoreDbBuilder 
-                {
-                    ProjectId = projectId,
-                    // In Cloud Run, we don't need to specify credentials
-                    // It will use the default service account
-                }.Build();
-            }
-
-            // Local development with service account file
-            string? credentialsPath = configuration["movelAppServiceAccount"];
-            if (!string.IsNullOrEmpty(credentialsPath) )
-            {
-                Console.WriteLine($"Using credentials at path: {credentialsPath}");
-                return new FirestoreDbBuilder
-                {
-                    ProjectId = projectId,
-                    CredentialsPath = credentialsPath
-                }.Build();
-            }
-            else{
-            throw new InvalidOperationException($"Credentials file not found at {credentialsPath}");
-            }} 
+            return FirestoreDb.Create(projectId);
+        }
 
  
         private static void ConfigureLogging(WebApplicationBuilder builder)
@@ -98,12 +112,15 @@ namespace apiEndpointNameSpace
 
             // Check if running in Cloud Run by verifying the presence of the K_SERVICE environment variable
             bool isCloudRun = Environment.GetEnvironmentVariable("K_SERVICE") != null;
+            var credential = GoogleCredential.GetApplicationDefault();
+            Console.WriteLine($"Default credentials: {credential}");
 
             if (isCloudRun)
             {
                 // Use default credentials provided by Cloud Run's service account
                 FirebaseApp.Create(new AppOptions
                 {
+                    Credential = credential,
                     ProjectId = configuration["GoogleCloudProjectId"]
                 });
                 Console.WriteLine("Firebase initialized with default credentials.");
@@ -118,10 +135,10 @@ namespace apiEndpointNameSpace
             {
                 try
                 {
-                    var credential = GoogleCredential.FromFile(credentialsPath);
+                    var credentialLocal = GoogleCredential.FromFile(credentialsPath);
                     FirebaseApp.Create(new AppOptions
                     {
-                        Credential = credential,
+                        Credential = credentialLocal,
                         ProjectId = configuration["GoogleCloudProjectId"]
                     });
                     Console.WriteLine("Firebase initialized successfully.");
