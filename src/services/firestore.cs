@@ -44,6 +44,8 @@ namespace apiEndpointNameSpace.Services
             }
         }
 
+
+        // Delete measurements after updated 
         public async Task StoreMeasurementsAsync(ProcessedMeasurements data)
         {
             try

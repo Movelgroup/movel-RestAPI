@@ -12,6 +12,7 @@ namespace apiEndpointNameSpace.Models.Measurements
         public int SocketId { get; set; }
         public DateTime TimeStamp { get; set; }
         public List<Measurement>? Measurements { get; set; }
+        public string? Message { get; set; }
     }
 
     public class Measurement
