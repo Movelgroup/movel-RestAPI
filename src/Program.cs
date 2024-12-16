@@ -81,7 +81,7 @@ namespace apiEndpointNameSpace
             throw new InvalidOperationException($"Credentials file not found at {credentialsPath}");
             }} 
 
-
+ 
         private static void ConfigureLogging(WebApplicationBuilder builder)
         {
             builder.Logging.ClearProviders();
