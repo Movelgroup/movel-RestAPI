@@ -50,7 +50,7 @@ namespace apiEndpointNameSpace.Services
         {
             try
             {
-                var docRef = _db.Collection("measurements").Document();
+                var docRef = _db.Collection("measurements").Document(data.ChargerId);
                 await docRef.SetAsync(data);
                 logger.LogInformation("Successfully stored measurements for ChargerId: {ChargerId}", data.ChargerId);
             }
