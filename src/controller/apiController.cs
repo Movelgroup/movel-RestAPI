@@ -56,7 +56,7 @@ namespace apiEndpointNameSpace.Controllers
                 var storeInfo = await _firestoreService.StoreChargerStateAsync(processedData);
                 logger.LogInformation("FirestoreInfo: {StoreInfo}", storeInfo);
 
-                await _notificationService.NotifyChargerStateChangeAsync(processedData);
+                // await _notificationService.NotifyChargerStateChangeAsync(processedData);
                 
                 logger.LogInformation("Charger state processed successfully for ChargerID: {ChargerId}", processedData.ChargerId);
                 return Ok(new { Status = "Success", Message = "Charger state received and processed", DebugInfo = storeInfo });
@@ -88,25 +88,38 @@ namespace apiEndpointNameSpace.Controllers
 
             if (!ModelState.IsValid)
             {
-                logger.LogWarning("Invalid ModelState in ReceiveMeasurements");
+                logger.LogWarning("Invalid ModelState in ReceiveMeasurements: {@ModelState}", ModelState);
                 return BadRequest(ModelState);
             }
 
             try
             {
-                var processedData = await _dataProcessor.ProcessMeasurementsAsync(message);
-                await _firestoreService.StoreMeasurementsAsync(processedData);
-                await _notificationService.NotifyMeasurementsUpdateAsync(processedData);
+                logger.LogInformation("ReceiveMeasurements: Received message: {@Message}", message);
 
-                logger.LogInformation("Measurements processed successfully for ChargerID: {ChargerId}", processedData.ChargerId);
+                var processedData = await _dataProcessor.ProcessMeasurementsAsync(message);
+
+                logger.LogInformation("ReceiveMeasurements: Processed data: {@ProcessedData}", processedData);
+
+                await _firestoreService.StoreMeasurementsAsync(processedData);
+                logger.LogInformation("Measurements stored successfully for ChargerID: {ChargerId}", processedData.ChargerId);
+
+                await _notificationService.NotifyMeasurementsUpdateAsync(processedData);
+                logger.LogInformation("Notification sent successfully for ChargerID: {ChargerId}", processedData.ChargerId);
+
                 return Ok(new { Status = "Success", Message = "Measurements received and processed" });
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogError(ex, "Validation error in ReceiveMeasurements: {Message}", ex.Message);
+                return BadRequest(new { Status = "Error", Message = ex.Message });
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error processing measurements");
+                logger.LogError(ex, "Error in ReceiveMeasurements: {Message}", ex.Message);
                 return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the measurements" });
             }
         }
+
 
         // Endpoint for FullChargingTransaction
         /*
