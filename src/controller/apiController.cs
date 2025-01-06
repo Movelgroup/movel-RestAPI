@@ -103,8 +103,8 @@ namespace apiEndpointNameSpace.Controllers
                 await _firestoreService.StoreMeasurementsAsync(processedData);
                 logger.LogInformation("Measurements stored successfully for ChargerID: {ChargerId}", processedData.ChargerId);
 
-                await _notificationService.NotifyMeasurementsUpdateAsync(processedData);
-                logger.LogInformation("Notification sent successfully for ChargerID: {ChargerId}", processedData.ChargerId);
+                // await _notificationService.NotifyMeasurementsUpdateAsync(processedData);
+                // logger.LogInformation("Notification sent successfully for ChargerID: {ChargerId}", processedData.ChargerId);
 
                 return Ok(new { Status = "Success", Message = "Measurements received and processed" });
             }
@@ -140,7 +140,7 @@ namespace apiEndpointNameSpace.Controllers
             try
             {
                 var processedData = await _dataProcessor.ProcessFullChargingTransactionAsync(message);
-                await _notificationService.NotifyFullChargingTransactionAsync(processedData);
+                // await _notificationService.NotifyFullChargingTransactionAsync(processedData);
 
                 logger.LogInformation("Full charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
                 return Ok(new { Status = "Success", Message = "Full charging transaction received and processed" });
@@ -171,7 +171,7 @@ namespace apiEndpointNameSpace.Controllers
             try
             {
                 var processedData = await _dataProcessor.ProcessChargingTransactionAsync(message);
-                await _notificationService.NotifyChargingTransactionAsync(processedData);
+                // await _notificationService.NotifyChargingTransactionAsync(processedData);
 
                 logger.LogInformation("Charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
                 return Ok(new { Status = "Success", Message = "Charging transaction received and processed" });
