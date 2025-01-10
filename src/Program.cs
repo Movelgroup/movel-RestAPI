@@ -11,6 +11,8 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.SecretManager.V1;
 using System.Security.Principal;
+using apiEndpointNameSpace.Middleware;
+using apiEndpointNameSpace.Models.ApiKey;
 
 namespace apiEndpointNameSpace
 {
@@ -160,6 +162,22 @@ namespace apiEndpointNameSpace
 
         public static void ConfigureServices(IServiceCollection services, FirestoreDb firestoreDb, IConfiguration configuration)
         {
+            // Fetch API Keys from Secret Manager
+            var secretClient = SecretManagerServiceClient.Create();
+            var secretName = new SecretName(configuration["GoogleCloudProjectId"], "emablerApi-key");
+            var secretVersion = secretClient.AccessSecretVersion(new AccessSecretVersionRequest
+            {
+                Name = $"{secretName}/versions/latest" // Correct secret version usage
+            });
+
+            var apiKeysJson = secretVersion.Payload.Data.ToStringUtf8();
+            var apiKeys = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiKeyConfig>(apiKeysJson);
+
+            services.Configure<ApiKeyConfig>(options => 
+            {
+                options.ValidKeys = apiKeys.ValidKeys;
+            });
+            
             // Add this logging at the start to debug configuration
             var jwtKey = configuration["Jwt:Key"];
             var jwtIssuer = configuration["Jwt:Issuer"];
@@ -279,6 +297,8 @@ namespace apiEndpointNameSpace
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            app.UseApiKeyMiddleware();
 
             app.UseHttpsRedirection();
             app.UseRouting();
