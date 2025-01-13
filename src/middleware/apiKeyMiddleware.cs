@@ -42,6 +42,7 @@ namespace apiEndpointNameSpace.Middleware
                 return;
             }
 
+            _logger.LogInformation("Correct API Key.");
             await _next(context);
         }
         
