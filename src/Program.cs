@@ -13,6 +13,7 @@ using Google.Cloud.SecretManager.V1;
 using System.Security.Principal;
 using apiEndpointNameSpace.Middleware;
 using apiEndpointNameSpace.Models.ApiKey;
+using Newtonsoft.Json;
 
 namespace apiEndpointNameSpace
 {
@@ -176,10 +177,28 @@ namespace apiEndpointNameSpace
                 });
 
                 var apiKeysJson = secretVersion.Payload.Data.ToStringUtf8();
-                var apiKeys = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiKeyConfig>(apiKeysJson);
-                Console.WriteLine($"Fetched secret payload: {apiKeys}, {apiKeysJson}");
+                Console.WriteLine($"Fetched secret payload: {apiKeysJson}");
 
-                services.Configure<ApiKeyConfig>(options => 
+                ApiKeyConfig? apiKeys = null;
+                try
+                {
+                    // Attempt to parse as JSON
+                    apiKeys = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiKeyConfig>(apiKeysJson);
+                    if (apiKeys == null || apiKeys.ValidKeys == null)
+                    {
+                        throw new InvalidOperationException("Invalid API key configuration.");
+                    }
+                }
+                catch (JsonReaderException ex)
+                {
+                    // Handle plain text secret
+                    Console.WriteLine($"Secret payload is not JSON. Assuming plain text. {ex.Message}");
+                    apiKeys = new ApiKeyConfig
+                    {
+                        ValidKeys = [apiKeysJson]
+                    };
+                }
+                services.Configure<ApiKeyConfig>(options =>
                 {
                     options.ValidKeys = apiKeys.ValidKeys;
                 });
