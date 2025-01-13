@@ -162,21 +162,32 @@ namespace apiEndpointNameSpace
 
         public static void ConfigureServices(IServiceCollection services, FirestoreDb firestoreDb, IConfiguration configuration)
         {
-            // Fetch API Keys from Secret Manager
-            var secretClient = SecretManagerServiceClient.Create();
-            var secretName = new SecretName(configuration["GoogleCloudProjectId"], "emablerApi-key");
-            var secretVersion = secretClient.AccessSecretVersion(new AccessSecretVersionRequest
-            {
-                Name = $"{secretName}/versions/latest" // Correct secret version usage
-            });
+            try{
+                // Fetch API Keys from Secret Manager
+                Console.WriteLine("Initializing Secret Manager Client...");
+                var secretClient = SecretManagerServiceClient.Create();
+                Console.WriteLine("Secret Manager Client initialized successfully.");
 
-            var apiKeysJson = secretVersion.Payload.Data.ToStringUtf8();
-            var apiKeys = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiKeyConfig>(apiKeysJson);
+                var secretName = new SecretName(configuration["GoogleCloudProjectId"], "emablerApi-key");
+                Console.WriteLine($"Accessing secret: {secretName}");
+                var secretVersion = secretClient.AccessSecretVersion(new AccessSecretVersionRequest
+                {
+                    Name = $"{secretName}/versions/latest" // Correct secret version usage
+                });
 
-            services.Configure<ApiKeyConfig>(options => 
-            {
-                options.ValidKeys = apiKeys.ValidKeys;
-            });
+                var apiKeysJson = secretVersion.Payload.Data.ToStringUtf8();
+                var apiKeys = Newtonsoft.Json.JsonConvert.DeserializeObject<ApiKeyConfig>(apiKeysJson);
+                Console.WriteLine($"Fetched secret payload: {apiKeys}, {apiKeysJson}");
+
+                services.Configure<ApiKeyConfig>(options => 
+                {
+                    options.ValidKeys = apiKeys.ValidKeys;
+                });
+            }
+            catch (Exception ex){
+                Console.WriteLine($"Error accessing Secret Manager: {ex.Message}");
+                throw;
+            }
             
             // Add this logging at the start to debug configuration
             var jwtKey = configuration["Jwt:Key"];
