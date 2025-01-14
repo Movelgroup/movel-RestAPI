@@ -52,6 +52,7 @@ namespace apiEndpointNameSpace.Services
                     // Alternatively, specify a specific version if needed
                     // Version = "latest"
                 };
+                _logger.LogInformation("Secret fetch request: ",request);
 
                 var response = await _secretClient.AccessSecretVersionAsync(request);
                 string payload = response.Payload.Data.ToStringUtf8();
@@ -67,7 +68,7 @@ namespace apiEndpointNameSpace.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to retrieve API keys from Secret Manager.");
+                _logger.LogError(ex, ex.Message, "Failed to retrieve API keys from Secret Manager.");
                 throw; // Rethrow to let the middleware handle the error appropriately
             }
         }
