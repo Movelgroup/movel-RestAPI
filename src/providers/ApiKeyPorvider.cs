@@ -34,7 +34,6 @@ namespace apiEndpointNameSpace.Services
             }
             
             _secretName = new SecretName(projectId, secretId);
-            Secret secret = _secretClient.GetSecret(_secretName);
         }
 
         public async Task<IEnumerable<string>> GetApiKeysAsync()
@@ -47,31 +46,35 @@ namespace apiEndpointNameSpace.Services
 
             try
             {
+                // Construct the secret version name using "latest"
+                var secretVersionName = new SecretVersionName(_secretName.ProjectId, _secretName.SecretId, "latest");
                 var request = new AccessSecretVersionRequest
-                {   
-                    Name = _secretName.ToString(), // Name could be wrong 
-                    // Use "latest" to always get the most recent version
-                    // Alternatively, specify a specific version if needed
-                    // Version = "latest"
+                {
+                    SecretVersionName = secretVersionName
                 };
-                _logger.LogInformation("Secret fetch request: ",request);
+
+                _logger.LogInformation("Secret fetch request for: {SecretVersionName}", secretVersionName);
 
                 var response = await _secretClient.AccessSecretVersionAsync(request);
                 string payload = response.Payload.Data.ToStringUtf8();
 
-                // Assuming the secret is a JSON object with a "ValidKeys" array
                 var apiKeyConfig = JsonConvert.DeserializeObject<ApiKeyConfig>(payload);
+                if (apiKeyConfig == null || apiKeyConfig.ValidKeys == null)
+                {
+                    _logger.LogError("Failed to deserialize secret payload into ApiKeyConfig.");
+                    throw new FormatException("Secret payload format is incorrect.");
+                }
+
                 _cachedApiKeys = apiKeyConfig.ValidKeys;
                 _lastFetchTime = DateTime.UtcNow;
 
                 _logger.LogInformation("Successfully fetched API keys from Secret Manager.");
-
                 return _cachedApiKeys;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message, "Failed to retrieve API keys from Secret Manager.");
-                throw; // Rethrow to let the middleware handle the error appropriately
+                _logger.LogError(ex, "Failed to retrieve API keys from Secret Manager.");
+                throw;
             }
         }
     }

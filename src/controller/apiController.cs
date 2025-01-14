@@ -55,9 +55,7 @@ namespace apiEndpointNameSpace.Controllers
                 
                 var storeInfo = await _firestoreService.StoreChargerStateAsync(processedData);
                 logger.LogInformation("FirestoreInfo: {StoreInfo}", storeInfo);
-
-                // await _notificationService.NotifyChargerStateChangeAsync(processedData);
-                
+              
                 logger.LogInformation("Charger state processed successfully for ChargerID: {ChargerId}", processedData.ChargerId);
                 return Ok(new { Status = "Success", Message = "Charger state received and processed", DebugInfo = storeInfo });
             }
@@ -102,9 +100,6 @@ namespace apiEndpointNameSpace.Controllers
 
                 await _firestoreService.StoreMeasurementsAsync(processedData);
                 logger.LogInformation("Measurements stored successfully for ChargerID: {ChargerId}", processedData.ChargerId);
-
-                // await _notificationService.NotifyMeasurementsUpdateAsync(processedData);
-                // logger.LogInformation("Notification sent successfully for ChargerID: {ChargerId}", processedData.ChargerId);
 
                 return Ok(new { Status = "Success", Message = "Measurements received and processed" });
             }
