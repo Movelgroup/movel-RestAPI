@@ -14,7 +14,7 @@ namespace apiEndpointNameSpace.Services
         private readonly ILogger<SecretManagerApiKeyProvider> _logger;
         private readonly IConfiguration _configuration;
         private readonly SecretManagerServiceClient _secretClient;
-        private readonly string _secretName;
+        private readonly SecretName _secretName;
         private IEnumerable<string> _cachedApiKeys;
         private DateTime _lastFetchTime;
         private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5); // Adjust as needed
@@ -32,7 +32,9 @@ namespace apiEndpointNameSpace.Services
             {
                 throw new ArgumentException("GoogleCloudProjectId or apiKeySecretId is not configured.");
             }
-            _secretName = new SecretName(projectId, secretId).ToString();
+            
+            _secretName = new SecretName(projectId, secretId);
+            Secret secret = _secretClient.GetSecret(_secretName);
         }
 
         public async Task<IEnumerable<string>> GetApiKeysAsync()
@@ -47,7 +49,7 @@ namespace apiEndpointNameSpace.Services
             {
                 var request = new AccessSecretVersionRequest
                 {   
-                    Name = _secretName, // Name could be wrong 
+                    Name = _secretName.ToString(), // Name could be wrong 
                     // Use "latest" to always get the most recent version
                     // Alternatively, specify a specific version if needed
                     // Version = "latest"
