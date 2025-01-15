@@ -15,7 +15,7 @@ namespace apiEndpointNameSpace.Controllers
     /// API controller for handling operations related to charger data and transactions.
     /// </summary>
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [EnableCors("ApiPolicy")]
     public class RestAPIController : ControllerBase
     {
