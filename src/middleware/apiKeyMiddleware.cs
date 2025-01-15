@@ -35,7 +35,7 @@ namespace apiEndpointNameSpace.Middleware
                 _logger.LogInformation("Incoming request: Path = {Path}, IP = {IP}, Method = {Method}", path, ipAddress, httpMethod);
 
                 // Bypass API key check for Swagger and other public endpoints
-                if (path.StartsWith("/swagger") || path.StartsWith("/health"))
+                if (path.StartsWith("/swagger") || path.StartsWith("/swagger.json") || path.StartsWith("/health"))
                 {
                     await _next(context);
                     return;
