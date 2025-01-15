@@ -16,9 +16,17 @@ using apiEndpointNameSpace.Models.ApiKey;
 using Newtonsoft.Json;
 
 namespace apiEndpointNameSpace
-{
+{   
+    /// <summary>
+    /// Main entry point for the application.
+    /// Configures and starts the web application.
+    /// </summary>
     public class Program
     {
+        /// <summary>
+        /// Application's main method.
+        /// </summary>
+        /// <param name="args">Command-line arguments.</param>
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -39,7 +47,6 @@ namespace apiEndpointNameSpace
             ConfigureServices(builder.Services, firestoreDb, builder.Configuration);
 
 
-
             var app = builder.Build();
 
             app.Logger.LogInformation("Starting web application on port {port}", port);
@@ -53,6 +60,11 @@ namespace apiEndpointNameSpace
 
         }
 
+        /// <summary>
+        /// Initializes FirestoreDb instance.
+        /// </summary>
+        /// <param name="configuration">Application configuration object.</param>
+        /// <returns>Configured FirestoreDb instance.</returns>
         private static FirestoreDb InitializeFirestoreDb(IConfiguration configuration)
         {
             if (FirebaseApp.DefaultInstance != null)
@@ -102,6 +114,10 @@ namespace apiEndpointNameSpace
         }
 
  
+        /// <summary>
+        /// Configures logging for the application.
+        /// </summary>
+        /// <param name="builder">Web application builder object.</param>
         private static void ConfigureLogging(WebApplicationBuilder builder)
         {
             builder.Logging.ClearProviders();
@@ -112,6 +128,10 @@ namespace apiEndpointNameSpace
             builder.Logging.AddFile(builder.Configuration.GetSection("Logging"));
         }
 
+        /// <summary>
+        /// Initializes Firebase authentication.
+        /// </summary>
+        /// <param name="configuration">Application configuration object.</param>
         private static void InitializeFirebaseAuth(IConfiguration configuration)
         {
             if (FirebaseApp.DefaultInstance != null) return;
@@ -161,6 +181,12 @@ namespace apiEndpointNameSpace
         }
 
 
+        /// <summary>
+        /// Configures services for dependency injection.
+        /// </summary>
+        /// <param name="services">Service collection for DI.</param>
+        /// <param name="firestoreDb">Initialized FirestoreDb instance.</param>
+        /// <param name="configuration">Application configuration object.</param>
         public static void ConfigureServices(IServiceCollection services, FirestoreDb firestoreDb, IConfiguration configuration)
         {
             // Register the SecretManagerApiKeyProvider as a singleton
@@ -261,7 +287,22 @@ namespace apiEndpointNameSpace
                     }
                 };
             });
-            services.AddSwaggerGen();
+
+            services.AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                    {
+                        Title = "Movel RestAPI",
+                        Version = "v1",
+                        Description = "API documentation for internal and third-party."
+                    });
+
+                    // Include XML comments (optional but recommended for detailed docs)
+                    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                    var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
+                    c.IncludeXmlComments(xmlPath);
+                });
+
             services.AddSingleton<IDataProcessor, DataProcessorService>();
             services.AddSingleton<IFirestoreService>(sp => 
             {
@@ -278,13 +319,22 @@ namespace apiEndpointNameSpace
         }
 
 
+        /// <summary>
+        /// Configures the middleware and request pipeline for the application.
+        /// </summary>
+        /// <param name="app">Web application instance.</param>
         public static void ConfigureApp(WebApplication app)
         {
-            if (app.Environment.IsDevelopment())
+
+            // Enable middleware to serve generated Swagger as JSON endpoint
+            app.UseSwagger();
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
+            // specifying the Swagger JSON endpoint.
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+                c.RoutePrefix = string.Empty; // Set Swagger UI at application's root, optional.
+            });
 
             app.UseApiKeyMiddleware();
 
