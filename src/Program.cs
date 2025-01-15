@@ -294,7 +294,37 @@ namespace apiEndpointNameSpace
                     {
                         Title = "Movel RestAPI",
                         Version = "v1",
-                        Description = "API documentation for internal and third-party."
+                        Description = "API documentation for internal and third-party.",
+                        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+                            {
+                                Name = "Theo Magnor",
+                                Email = "theo@movel.no",
+                            }
+                    });
+
+                    // Add the API Key security definition
+                    c.AddSecurityDefinition("ApiKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Description = "API Key required. Enter your API key in the 'x-api-key' header.",
+                        Name = "x-api-key", // Header name used for the API key
+                        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                    });
+
+                    // Apply the API Key requirement globally or to specific endpoints
+                    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                    {
+                        {
+                            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                            {
+                                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                                {
+                                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                    Id = "ApiKey"
+                                }
+                            },
+                            new string[] { } // No specific scopes required for API keys
+                        }
                     });
 
                     // Include XML comments (optional but recommended for detailed docs)
