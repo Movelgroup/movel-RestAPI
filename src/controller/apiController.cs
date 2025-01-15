@@ -10,17 +10,28 @@ using Microsoft.AspNetCore.Cors;
 
 namespace apiEndpointNameSpace.Controllers
 {
+
+    /// <summary>
+    /// API controller for handling operations related to charger data and transactions.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [EnableCors("ApiPolicy")]
-    public class PushAPIController : ControllerBase
+    public class RestAPIController : ControllerBase
     {
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
         private readonly INotificationService _notificationService;
         private readonly IFirebaseAuthService _firebaseAuthService;
 
-        public PushAPIController(
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RestAPIController"/> class.
+        /// </summary>
+        /// <param name="dataProcessor">Service for processing data related to chargers.</param>
+        /// <param name="firestoreService">Service for interacting with Firestore database.</param>
+        /// <param name="notificationService">Service for handling notifications.</param>
+        /// <param name="firebaseAuthService">Service for Firebase authentication.</param>
+        public RestAPIController(
             IDataProcessor dataProcessor,
             IFirestoreService firestoreService,
             INotificationService notificationService,
@@ -32,11 +43,15 @@ namespace apiEndpointNameSpace.Controllers
             _firebaseAuthService = firebaseAuthService;
         }
 
+        /// <summary>
+        /// Receives and processes the current state of a charger.
+        /// </summary>
+        /// <param name="message">Message containing charger state data.</param>
+        /// <param name="serviceProvider">Service provider for retrieving required services.</param>
+        /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("charger-state")]
         // ChargerState message
-        /*
-        This message is used to deliver the current status of a charging station and it’s socket Status values are: Available, Error, Offline, Info, Charging, SuspendedCAR, SuspendedCHARGER, Preparing, Finishing, Booting, Unavailable
-        */
+        // This message is used to deliver the current status of a charging station and it’s socket Status values are: Available, Error, Offline, Info, Charging, SuspendedCAR, SuspendedCHARGER, Preparing, Finishing, Booting, Unavailable
         public async Task<IActionResult> ReceiveChargerState([FromBody] ChargerStateMessage message, IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
@@ -73,12 +88,15 @@ namespace apiEndpointNameSpace.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Receives and processes measurements reported by chargers.
+        /// </summary>
+        /// <param name="message">Message containing measurement data.</param>
+        /// <param name="serviceProvider">Service provider for retrieving required services.</param>
+        /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("measurements")]
         // Measurements message
-        /*
-        This message is send when charger is reporting meter values during the charging transaction. TypeofMeasurement, Phase and Unit are following OCPP1.6 model.
-        */
+        // This message is send when charger is reporting meter values during the charging transaction. TypeofMeasurement, Phase and Unit are following OCPP1.6 model.
         public async Task<IActionResult> ReceiveMeasurements([FromBody] MeasurementsMessage message, IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
@@ -115,12 +133,15 @@ namespace apiEndpointNameSpace.Controllers
             }
         }
 
-
-        // Endpoint for FullChargingTransaction
-        /*
-        This message is used to deliver information of a full charging transaction. This message is delivered after the charging has ended.
-        */
+        /// <summary>
+        /// Receives and processes a full charging transaction after completion.
+        /// </summary>
+        /// <param name="message">Message containing full charging transaction data.</param>
+        /// <param name="serviceProvider">Service provider for retrieving required services.</param>
+        /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("full-charging-transaction")]
+        // Endpoint for FullChargingTransaction
+        // This message is used to deliver information of a full charging transaction. This message is delivered after the charging has ended.
         public async Task<IActionResult> ReceiveFullChargingTransaction([FromBody] FullChargingTransaction message, IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
@@ -147,11 +168,15 @@ namespace apiEndpointNameSpace.Controllers
             }
         }
 
-        // Endpoint for ChargingTransaction
-        /*
-        This message is send when charging transaction starts and stops. Action can be: 'transaction_start' or 'transaction_stop'
-        */
+        /// <summary>
+        /// Receives and processes a charging transaction when it starts or stops.
+        /// </summary>
+        /// <param name="message">Message containing charging transaction data.</param>
+        /// <param name="serviceProvider">Service provider for retrieving required services.</param>
+        /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("charging-transaction")]
+        // Endpoint for ChargingTransaction
+        // This message is send when charging transaction starts and stops. Action can be: 'transaction_start' or 'transaction_stop'
         public async Task<IActionResult> ReceiveChargingTransaction([FromBody] ChargingTransaction message, IServiceProvider serviceProvider)
         {
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
