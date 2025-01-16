@@ -39,7 +39,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build --platform linux/amd64 -t $IMAGE .
+          docker build --platform linux/amd64 -t $IMAGE Docker.api
           docker push $IMAGE
 
       - name: Deploy to Cloud Run
