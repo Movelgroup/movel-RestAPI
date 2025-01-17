@@ -63,7 +63,7 @@ jobs:
       - name: Deploy Swagger UI to Cloud Run
         run: |
           gcloud run deploy swagger-ui-service \
-            --image $IMAGE_SWAGGER \
+            --image "$IMAGE_SWAGGER" \
             --platform managed \
             --region $REGION \
             --allow-unauthenticated \
