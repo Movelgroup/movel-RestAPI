@@ -39,13 +39,31 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build --platform linux/amd64 -t $IMAGE Dockerfile.api
+          docker build --platform linux/amd64 -t $IMAGE Dockerfile.api .
           docker push $IMAGE
 
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy $SERVICE_NAME \
             --image $IMAGE \
+            --platform managed \
+            --region $REGION \
+            --allow-unauthenticated \
+            --timeout=600
+            
+      # Build and Push Swagger UI Docker Image
+      - name: Build and Push Swagger UI Docker Image
+        env:
+          IMAGE_SWAGGER: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/swagger-ui:${{ github.sha }}
+        run: |
+          docker build --platform linux/amd64 -t $IMAGE_SWAGGER -f swagger-ui/Dockerfile.swagger .
+          docker push $IMAGE_SWAGGER
+
+      # Deploy Swagger UI to Cloud Run
+      - name: Deploy Swagger UI to Cloud Run
+        run: |
+          gcloud run deploy swagger-ui-service \
+            --image $IMAGE_SWAGGER \
             --platform managed \
             --region $REGION \
             --allow-unauthenticated \
