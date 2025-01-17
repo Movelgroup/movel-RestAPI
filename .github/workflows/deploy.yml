@@ -39,7 +39,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build --platform linux/amd64 -t $IMAGE Dockerfile.api .
+          docker build --platform linux/amd64 -t $IMAGE -f Dockerfile.api .
           docker push $IMAGE
 
       - name: Deploy to Cloud Run
@@ -50,7 +50,7 @@ jobs:
             --region $REGION \
             --allow-unauthenticated \
             --timeout=600
-            
+
       # Build and Push Swagger UI Docker Image
       - name: Build and Push Swagger UI Docker Image
         env:
