@@ -26,15 +26,6 @@ namespace apiEndpointNameSpace.Interfaces
         Task StoreSlowChargingAsync(ProcessedMeasurements data, decimal powerKw);
     }
 
-    public interface INotificationService
-    {
-        Task NotifyChargerStateChangeAsync(ProcessedChargerState data);
-        Task NotifyMeasurementsUpdateAsync(ProcessedMeasurements data);
-        Task NotifyFullChargingTransactionAsync(ProcessedFullChargingTransaction data);
-        Task NotifyChargingTransactionAsync(ProcessedChargingTransaction data);
-
-    }
-
         public interface IFirebaseAuthService
     {
         Task<AuthResponse> AuthenticateUserMailAsync(string email, string password, List<String> chargerIDs);

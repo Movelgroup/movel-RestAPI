@@ -222,34 +222,6 @@ namespace apiEndpointNameSpace
                             .WithExposedHeaders("Content-Disposition")
                             .WithHeaders("Authorization", "Content-Type", "Accept");
                     });
-
-                    // Separate policy for SignalR
-                    options.AddPolicy("SignalRPolicy", builder =>
-                    {
-                        builder
-                            .WithOrigins(
-                                "http://localhost:3000",
-                                "https://movelsoftwaremanager.web.app",
-                                "https://movelsoftwaremanager.firebaseapp.com")
-                            .AllowAnyMethod()
-                            .AllowAnyHeader()
-                            .AllowCredentials()  // Required for SignalR
-                            .WithHeaders(
-                                "X-Requested-With",
-                                "Content-Type",
-                                "Accept",
-                                "Authorization",
-                                "x-signalr-user-agent",  // Add this specific header
-                                "x-requested-with",      // Sometimes needed in lowercase
-                                "x-signalr-protocol"     // Add this SignalR specific header
-                            )
-                            .WithExposedHeaders(
-                                        "Negotiate",
-                                        "X-SignalR-Protocol",
-                                        "X-SignalR-Version",
-                                        "X-SignalR-Error"
-                            );
-                    });
                 });
 
             // Configure JWT Authentication
@@ -340,13 +312,7 @@ namespace apiEndpointNameSpace
                 var logger = sp.GetRequiredService<ILogger<FirestoreService>>();
                 return new FirestoreService(firestoreDb, logger);
             });
-            services.AddSingleton<INotificationService, NotificationService>();
             services.AddSingleton<IFirebaseAuthService, FirebaseAuthService>();
-            services.AddSignalR(hubOptions =>
-            {
-                hubOptions.EnableDetailedErrors = true;
-                hubOptions.HandshakeTimeout = TimeSpan.FromSeconds(30);
-            }).AddJsonProtocol();
         }
 
 
@@ -383,15 +349,10 @@ namespace apiEndpointNameSpace
                     endpoints.MapControllers()
                             .RequireCors("ApiPolicy");
 
-                    
-                    endpoints.MapHub<ChargerHub>("/chargerhub")
-                            .RequireCors("SignalRPolicy");
-                    
                     endpoints.MapGet("/health", () => "Healthy")
                             .RequireCors("ApiPolicy");
                 }); 
 
-            app.Logger.LogInformation("SignalR Hub mapped at: /chargerhub");
         }
     }
 }

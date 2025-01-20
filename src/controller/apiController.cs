@@ -21,7 +21,6 @@ namespace apiEndpointNameSpace.Controllers
     {
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
-        private readonly INotificationService _notificationService;
         private readonly IFirebaseAuthService _firebaseAuthService;
 
         /// <summary>
@@ -29,17 +28,14 @@ namespace apiEndpointNameSpace.Controllers
         /// </summary>
         /// <param name="dataProcessor">Service for processing data related to chargers.</param>
         /// <param name="firestoreService">Service for interacting with Firestore database.</param>
-        /// <param name="notificationService">Service for handling notifications.</param>
         /// <param name="firebaseAuthService">Service for Firebase authentication.</param>
         public RestAPIController(
             IDataProcessor dataProcessor,
             IFirestoreService firestoreService,
-            INotificationService notificationService,
             IFirebaseAuthService firebaseAuthService)
         {
             _dataProcessor = dataProcessor;
             _firestoreService = firestoreService;
-            _notificationService = notificationService;
             _firebaseAuthService = firebaseAuthService;
         }
 
@@ -156,7 +152,6 @@ namespace apiEndpointNameSpace.Controllers
             try
             {
                 var processedData = await _dataProcessor.ProcessFullChargingTransactionAsync(message);
-                // await _notificationService.NotifyFullChargingTransactionAsync(processedData);
 
                 logger.LogInformation("Full charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
                 return Ok(new { Status = "Success", Message = "Full charging transaction received and processed" });
@@ -191,7 +186,6 @@ namespace apiEndpointNameSpace.Controllers
             try
             {
                 var processedData = await _dataProcessor.ProcessChargingTransactionAsync(message);
-                // await _notificationService.NotifyChargingTransactionAsync(processedData);
 
                 logger.LogInformation("Charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
                 return Ok(new { Status = "Success", Message = "Charging transaction received and processed" });
