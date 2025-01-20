@@ -215,7 +215,8 @@ namespace apiEndpointNameSpace
                                 "http://localhost:3000",
                                 "https://movelsoftwaremanager.web.app",
                                 "https://movelsoftwaremanager.firebaseapp.com",
-                                "https://swagger-ui-service-390725443005.europe-west1.run.app")
+                                "https://swagger-ui-service-390725443005.europe-west1.run.app",
+                                "https://movel-restapi-390725443005.europe-west1.run.app")
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()  
@@ -244,6 +245,7 @@ namespace apiEndpointNameSpace
                         Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not configured")))
                 };
 
+                //TODO: remove this section
                 // Configure JWT Bearer events for SignalR
                 options.Events = new JwtBearerEvents
                 {
@@ -336,21 +338,16 @@ namespace apiEndpointNameSpace
             app.UseApiKeyMiddleware();
 
             app.UseHttpsRedirection();
+            app.UseCors("ApiPolicy");
             app.UseRouting();
-            app.UseCors();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseWebSockets();
 
             app.UseEndpoints(endpoints =>
                 {
-                    
-                    // Apply specific CORS policies to different endpoints
-                    endpoints.MapControllers()
-                            .RequireCors("ApiPolicy");
-
-                    endpoints.MapGet("/health", () => "Healthy")
-                            .RequireCors("ApiPolicy");
+                    endpoints.MapControllers().RequireCors("ApiPolicy"); // Apply the CORS policy
+                    endpoints.MapGet("/health", () => "Healthy").RequireCors("ApiPolicy");
                 }); 
 
         }
