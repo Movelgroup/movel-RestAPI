@@ -6,9 +6,7 @@ on:
 
 env:
   PROJECT_ID: movel-app-4scpom
-  SERVICE_NAME: movel-restapi
   REGION: europe-west1
-  IMAGE: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/movel-restapi:${{ github.sha }}
 
 jobs:
   deploy:
@@ -37,15 +35,24 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
-      - name: Build and Push Docker Image
+      # Build and Push API Docker Image
+      - name: Build and Push API Docker Image
+        env:
+          IMAGE: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/movel-restapi:${{ github.sha }}
         run: |
-          docker build --platform linux/amd64 -t $IMAGE -f Dockerfile.api .
-          docker push $IMAGE
+          echo "Building API Docker Image: $IMAGE"
+          docker build --platform linux/amd64 -t "$IMAGE" -f Dockerfile.api .
+          docker push "$IMAGE"
 
-      - name: Deploy to Cloud Run
+      # Deploy API to Cloud Run
+      - name: Deploy API to Cloud Run
+        env:
+          IMAGE: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/movel-restapi:${{ github.sha }}
+          SERVICE_NAME: movel-restapi
         run: |
-          gcloud run deploy $SERVICE_NAME \
-            --image $IMAGE \
+          echo "Deploying API to Cloud Run with image: $IMAGE"
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$IMAGE" \
             --platform managed \
             --region $REGION \
             --allow-unauthenticated \
@@ -56,13 +63,18 @@ jobs:
         env:
           IMAGE_SWAGGER: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/swagger-ui:${{ github.sha }}
         run: |
-          docker build --platform linux/amd64 -t $IMAGE_SWAGGER -f swagger-ui/Dockerfile.swagger .
-          docker push $IMAGE_SWAGGER
+          echo "Building Swagger UI Docker Image: $IMAGE_SWAGGER"
+          docker build --platform linux/amd64 -t "$IMAGE_SWAGGER" -f swagger-ui/Dockerfile.swagger .
+          docker push "$IMAGE_SWAGGER"
 
       # Deploy Swagger UI to Cloud Run
       - name: Deploy Swagger UI to Cloud Run
+        env:
+          IMAGE_SWAGGER: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/swagger-ui:${{ github.sha }}
+          SERVICE_NAME_SWAGGER: swagger-ui-service
         run: |
-          gcloud run deploy swagger-ui-service \
+          echo "Deploying Swagger UI to Cloud Run with image: $IMAGE_SWAGGER"
+          gcloud run deploy "$SERVICE_NAME_SWAGGER" \
             --image "$IMAGE_SWAGGER" \
             --platform managed \
             --region $REGION \
