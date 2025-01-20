@@ -214,7 +214,8 @@ namespace apiEndpointNameSpace
                             .WithOrigins(
                                 "http://localhost:3000",
                                 "https://movelsoftwaremanager.web.app",
-                                "https://movelsoftwaremanager.firebaseapp.com")
+                                "https://movelsoftwaremanager.firebaseapp.com",
+                                "https://swagger-ui-service-390725443005.europe-west1.run.app")
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()  
