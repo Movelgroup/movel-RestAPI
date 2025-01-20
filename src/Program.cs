@@ -363,7 +363,7 @@ namespace apiEndpointNameSpace
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-                c.RoutePrefix = string.Empty; // Set Swagger UI at application's root, optional.
+                c.RoutePrefix = string.Empty; // Set Swagger UI at application's root, optional. 
             });
 
             app.UseApiKeyMiddleware();
