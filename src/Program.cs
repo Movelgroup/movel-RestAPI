@@ -212,18 +212,15 @@ namespace apiEndpointNameSpace
                     {
                         builder
                             .WithOrigins(
-                                "*"
-                                // "http://localhost:3000",
-                                // "https://movelsoftwaremanager.web.app",
-                                // "https://movelsoftwaremanager.firebaseapp.com",
-                                // "https://swagger-ui-service-390725443005.europe-west1.run.app",
-                                // "https://movel-restapi-390725443005.europe-west1.run.app"
+                                "http://localhost:3000",
+                                "https://movelsoftwaremanager.web.app",
+                                "https://movelsoftwaremanager.firebaseapp.com",
+                                "https://swagger-ui-service-390725443005.europe-west1.run.app",
+                                "https://movel-restapi-390725443005.europe-west1.run.app"
                                 )
                             .AllowAnyMethod()
                             .AllowAnyHeader()
-                            .AllowCredentials()  
-                            .WithExposedHeaders("Content-Disposition")
-                            .WithHeaders("Authorization", "Content-Type", "Accept");
+                            .AllowCredentials();
                     });
                 });
 
@@ -326,6 +323,7 @@ namespace apiEndpointNameSpace
         /// <param name="app">Web application instance.</param>
         public static void ConfigureApp(WebApplication app)
         {
+            app.UseCors("ApiPolicy");
 
             // Enable middleware to serve generated Swagger as JSON endpoint
             app.UseSwagger();
@@ -340,7 +338,6 @@ namespace apiEndpointNameSpace
             app.UseApiKeyMiddleware();
 
             app.UseHttpsRedirection();
-            app.UseCors("ApiPolicy");
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
