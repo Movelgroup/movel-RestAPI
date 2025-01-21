@@ -68,9 +68,16 @@ namespace apiEndpointNameSpace.Services
                         _logger.LogInformation("Processing measurement: Value: {Value}, Type: {TypeOfMeasurement}, Phase: {Phase}, Unit: {Unit}",
                             m.Value, m.TypeOfMeasurement, m.Phase, m.Unit);
 
+                        if (!decimal.TryParse(m.Value, out var parsedValue))
+                        {
+                            _logger.LogError("Invalid measurement value: {Value}. Skipping this measurement.", m.Value);
+                            // Optionally, throw an exception or handle the error differently
+                            throw new FormatException($"Invalid measurement value: {m.Value}");
+                        }
+
                         return new ProcessedMeasurement
                         {
-                            Value = decimal.Parse(m.Value ?? throw new ArgumentNullException(nameof(m.Value), "Measurement Value is null")),
+                            Value = parsedValue,
                             TypeOfMeasurement = m.TypeOfMeasurement,
                             Phase = m.Phase,
                             Unit = m.Unit
