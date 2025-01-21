@@ -323,6 +323,7 @@ namespace apiEndpointNameSpace
         /// <param name="app">Web application instance.</param>
         public static void ConfigureApp(WebApplication app)
         {
+            app.UseRouting();
             app.UseCors("ApiPolicy");
 
             // Enable middleware to serve generated Swagger as JSON endpoint
@@ -338,7 +339,6 @@ namespace apiEndpointNameSpace
             app.UseApiKeyMiddleware();
 
             app.UseHttpsRedirection();
-            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseWebSockets();
