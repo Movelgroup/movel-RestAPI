@@ -14,6 +14,8 @@ using System.Security.Principal;
 using apiEndpointNameSpace.Middleware;
 using apiEndpointNameSpace.Models.ApiKey;
 using Newtonsoft.Json;
+using Swashbuckle.AspNetCore.Annotations;
+
 
 namespace apiEndpointNameSpace
 {   
@@ -275,6 +277,8 @@ namespace apiEndpointNameSpace
                                 Email = "theo@movel.no",
                             }
                     });
+
+                    c.EnableAnnotations();
 
                     // Add the API Key security definition
                     c.AddSecurityDefinition("ApiKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme

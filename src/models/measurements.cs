@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Google.Cloud.Firestore;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace apiEndpointNameSpace.Models.Measurements
 {
@@ -17,25 +18,17 @@ namespace apiEndpointNameSpace.Models.Measurements
 
     public class Measurement
     {
-        /// <summary>
-        /// The value of the measurement. Should be a string representing a decimal (e.g., "2.5").
-        /// </summary>
-        [RegularExpression(@"^-?\d+(\.\d+)?$", ErrorMessage = "Value must be a valid decimal number.")]
+
+        [SwaggerSchema("The value of the measurement.", Description = "String: decimal value in the form of a String")]
         public string? Value { get; set; }
         
-        /// <summary>
-        /// The type of measurement (e.g., "power").
-        /// </summary>
+        
         public string? TypeOfMeasurement { get; set; }
 
-        /// <summary>
-        /// The phase of the measurement (e.g., "L1").
-        /// </summary>
+
         public string? Phase { get; set; }
 
-        /// <summary>
-        /// The unit of the measurement (e.g., "kW").
-        /// </summary>
+
         public string? Unit { get; set; }
     }
 

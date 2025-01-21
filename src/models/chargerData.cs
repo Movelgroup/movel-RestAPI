@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Google.Cloud.Firestore;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace apiEndpointNameSpace.Models.ChargerData
 {
@@ -15,11 +16,22 @@ namespace apiEndpointNameSpace.Models.ChargerData
 
     public class ChargerStateMessage
     {
+        [SwaggerSchema("Unique identifier for the charger.")]
         public string? ChargerId { get; set; }
+
+        [SwaggerSchema("The ID of the specific socket.")]
         public int SocketId { get; set; }
+
+        [SwaggerSchema("Timestamp of the charger state.")]
         public DateTime TimeStamp { get; set; }
+
+        [SwaggerSchema("The current status of the charger.", Description = "Charging")]
         public string? Status { get; set; }
+
+        [SwaggerSchema("Error code if any issues occurred.")]
         public string? ErrorCode { get; set; }
+
+        [SwaggerSchema("Additional information or message.")]
         public string? Message { get; set; }
     }
 
