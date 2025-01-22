@@ -2,10 +2,14 @@
 
 namespace apiEndpointNameSpace.Models.ApiKey
 {
-    // ApiKeyConfig class definition
     public class ApiKeyConfig
     {
-        public required string[] ValidKeys { get; set; }
+        public required List<ApiKeyEntry> ValidKeys { get; set; }
+    }
 
+    public class ApiKeyEntry
+    {
+        public required string ClientId { get; set; }
+        public required string ApiKey { get; set; }
     }
 }

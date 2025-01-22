@@ -49,8 +49,9 @@ namespace apiEndpointNameSpace.Controllers
         // This message is used to deliver the current status of a charging station and it’s socket Status values are: Available, Error, Offline, Info, Charging, SuspendedCAR, SuspendedCHARGER, Preparing, Finishing, Booting, Unavailable
         public async Task<IActionResult> ReceiveChargerState([FromBody] ChargerStateMessage message, IServiceProvider serviceProvider)
         {
-            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ReceiveChargerStates");
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ReceiveChargerStates");
+            var clientId = HttpContext.Request.Headers["X-Client-ID"].FirstOrDefault();
+            logger.LogInformation("Processing request from Client ID: {ClientId}", clientId);
 
             if (!ModelState.IsValid)
             {

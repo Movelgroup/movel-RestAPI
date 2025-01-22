@@ -1,11 +1,13 @@
 // IApiKeyProvider.cs
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using apiEndpointNameSpace.Models.ApiKey;
 
 namespace apiEndpointNameSpace.Services
 {
     public interface IApiKeyProvider
     {
-        Task<IEnumerable<string>> GetApiKeysAsync();
+        
+        Task<IEnumerable<ApiKeyEntry>> GetApiKeysAsync();
     }
 }

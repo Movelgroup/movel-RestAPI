@@ -13,6 +13,7 @@ namespace apiEndpointNameSpace.Middleware
     {
         private readonly RequestDelegate _next;
         private const string APIKEYNAME = "X-Api-Key";
+        private const string CLIENTIDNAME = "X-Client-ID";        
         private readonly ILogger<ApiKeyMiddleware> _logger;
         private readonly IApiKeyProvider _apiKeyProvider;
 
@@ -31,56 +32,44 @@ namespace apiEndpointNameSpace.Middleware
                 var ipAddress = context.Connection.RemoteIpAddress?.ToString();
                 var httpMethod = context.Request.Method;
 
-                // Log request details
                 _logger.LogInformation("Incoming request: Path = {Path}, IP = {IP}, Method = {Method}", path, ipAddress, httpMethod);
 
-                // Bypass API key check for Swagger and other public endpoints
                 if (path.StartsWith("/swagger") || path.StartsWith("/swagger.json") || path.StartsWith("/health"))
                 {
                     await _next(context);
                     return;
                 }
 
-                // Check if API Key header is present
-                if (!context.Request.Headers.TryGetValue(APIKEYNAME, out var extractedApiKey))
+                if (!context.Request.Headers.TryGetValue(APIKEYNAME, out var extractedApiKey) ||
+                    !context.Request.Headers.TryGetValue(CLIENTIDNAME, out var extractedClientId))
                 {
-                    _logger.LogWarning("API Key was not provided. Path: {Path}, IP: {IP}, Method: {Method}", path, ipAddress, httpMethod);
+                    _logger.LogWarning("Missing API Key or Client ID.");
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsync("API Key not provided.");
+                    await context.Response.WriteAsync("API Key or Client ID not provided.");
                     return;
                 }
 
-                // Fetch valid API keys from the provider
                 var apiKeys = await _apiKeyProvider.GetApiKeysAsync();
 
-                if (apiKeys == null || !apiKeys.Any())
-                {
-                    _logger.LogError("No valid API keys found in configuration. Path: {Path}, IP: {IP}, Method: {Method}", path, ipAddress, httpMethod);
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    await context.Response.WriteAsync("Server configuration error.");
-                    return;
-                }
+                var validEntry = apiKeys.FirstOrDefault(entry =>
+                    string.Equals(entry.ApiKey, extractedApiKey, StringComparison.Ordinal) &&
+                    string.Equals(entry.ClientId, extractedClientId, StringComparison.Ordinal));
 
-                // Validate the provided API key
-                bool keyMatches = apiKeys.Any(key => string.Equals(key, extractedApiKey, StringComparison.Ordinal));
-                if (!keyMatches)
+                if (validEntry == null)
                 {
-                    _logger.LogWarning("Unauthorized attempt with API Key: {ProvidedKey}, Path: {Path}, IP: {IP}, Method: {Method}",
-                        extractedApiKey, path, ipAddress, httpMethod);
+                    _logger.LogWarning("Unauthorized attempt with API Key: {ApiKey}, Client ID: {ClientId}", extractedApiKey, extractedClientId);
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     await context.Response.WriteAsync("Unauthorized client.");
                     return;
                 }
 
-                _logger.LogInformation("Authorized request. Path: {Path}, IP: {IP}, Method: {Method}, API Key: {ProvidedKey}",
-                    path, ipAddress, httpMethod, extractedApiKey);
+                _logger.LogInformation("Authorized request. Client ID: {ClientId}, API Key: {ApiKey}", extractedClientId, extractedApiKey);
                 await _next(context);
             }
             catch (Exception ex)
             {
-                var ipAddress = context.Connection.RemoteIpAddress?.ToString();
                 var path = context.Request.Path.Value;
-                _logger.LogError(ex, "An error occurred. Path: {Path}, IP: {IP}", path, ipAddress);
+                _logger.LogError(ex, "Error processing request. Path: {Path}", path);
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 await context.Response.WriteAsync("Internal server error.");
             }
