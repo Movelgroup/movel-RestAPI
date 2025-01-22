@@ -10,25 +10,48 @@ namespace apiEndpointNameSpace.Models.Measurements
 
     public class MeasurementsMessage
     {
+        /// <summary>
+        /// ChargerId. Datatype:String.
+        /// </summary>
         public string? ChargerId { get; set; }
+
+        /// <summary>
+        /// SocketId. Datatype:String.
+        /// </summary>
         public int SocketId { get; set; }
+
+        /// <summary>
+        /// Time when measurement is made. Datatype:DateTime.
+        /// </summary>
         public DateTime TimeStamp { get; set; }
+
+        /// <summary>
+        /// List Of measurements. Datatype:List<Measurement>.
+        /// </summary>
         public List<Measurement>? Measurements { get; set; }
     }
 
     public class Measurement
     {
-
-        [SwaggerSchema("The value of the measurement.", Description = "String: decimal value in the form of a String")]
+        /// <summary>
+        /// The value of the measurement. Datatype:String representing a float.
+        /// </summary>
         public string? Value { get; set; }
         
         
+        /// <summary>
+        /// Type of measurment. Datatype:String.
+        /// </summary>
         public string? TypeOfMeasurement { get; set; }
 
-
+        /// <summary>
+        /// Phase where the measurement is made. Datatype:String.
+        /// </summary>
         public string? Phase { get; set; }
 
-
+        /// <summary>
+        /// Unit of the measurement. Datatype:String.
+        /// </summary>
         public string? Unit { get; set; }
     }
 
