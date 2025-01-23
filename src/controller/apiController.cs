@@ -68,7 +68,7 @@ namespace apiEndpointNameSpace.Controllers
                 logger.LogInformation("FirestoreInfo: {StoreInfo}", storeInfo);
               
                 logger.LogInformation("Charger state processed successfully for ChargerID: {ChargerId}", processedData.ChargerId);
-                return Ok(new { Status = "Success", Message = "Charger state received and processed", DebugInfo = storeInfo });
+                return Ok(new { Status = "Success", Message = "Charger state received and processed" });
             }
             catch (Exception ex)
             {

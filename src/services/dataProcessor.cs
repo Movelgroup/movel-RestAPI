@@ -35,7 +35,6 @@ namespace apiEndpointNameSpace.Services
                 SocketId = message.SocketId,
                 Timestamp = message.TimeStamp,
                 Status = message.Status,
-                ErrorCode = message.ErrorCode,
                 MessageType = "chargerState",
                 Message = message.Message
             };

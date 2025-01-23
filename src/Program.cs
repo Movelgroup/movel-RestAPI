@@ -343,6 +343,8 @@ namespace apiEndpointNameSpace
             app.UseApiKeyMiddleware();
 
             app.UseHttpsRedirection();
+
+            app.UseMiddleware<ErrorHandlerMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseWebSockets();

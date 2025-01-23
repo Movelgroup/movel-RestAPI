@@ -28,9 +28,6 @@ namespace apiEndpointNameSpace.Models.ChargerData
         [SwaggerSchema("The current status of the charger.", Description = "Charging")]
         public string? Status { get; set; }
 
-        [SwaggerSchema("Error code if any issues occurred.")]
-        public string? ErrorCode { get; set; }
-
         [SwaggerSchema("Additional information or message.")]
         public string? Message { get; set; }
     }
@@ -50,8 +47,6 @@ namespace apiEndpointNameSpace.Models.ChargerData
         [FirestoreProperty]
         public string? Status { get; set; }
         
-        [FirestoreProperty]
-        public string? ErrorCode { get; set; }
         [FirestoreProperty]
         public string? MessageType { get; set; }
         
