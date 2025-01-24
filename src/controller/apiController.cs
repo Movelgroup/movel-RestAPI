@@ -7,6 +7,7 @@ using apiEndpointNameSpace.Models.ChargerData;
 using apiEndpointNameSpace.Models.Measurements;
 using System.Net;
 using Microsoft.AspNetCore.Cors;
+using apiEndpointNameSpace.Middleware;
 
 namespace apiEndpointNameSpace.Controllers
 {
@@ -45,43 +46,20 @@ namespace apiEndpointNameSpace.Controllers
         /// <param name="serviceProvider">Service provider for retrieving required services.</param>
         /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("charger-state")]
-        // ChargerState message
-        // This message is used to deliver the current status of a charging station and it’s socket Status values are: Available, Error, Offline, Info, Charging, SuspendedCAR, SuspendedCHARGER, Preparing, Finishing, Booting, Unavailable
         public async Task<IActionResult> ReceiveChargerState([FromBody] ChargerStateMessage message, IServiceProvider serviceProvider)
         {
-            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ReceiveChargerStates");
-            var clientId = HttpContext.Request.Headers["X-Client-ID"].FirstOrDefault();
-            logger.LogInformation("Processing request from Client ID: {ClientId}", clientId);
-
             if (!ModelState.IsValid)
             {
-                logger.LogWarning("Invalid ModelState in ReceiveChargerState");
-                return BadRequest(ModelState);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+                throw new ValidationException(string.Join("; ", errors));
             }
 
-            try
-            {
-                var processedData = await _dataProcessor.ProcessChargerStateAsync(message);
-                logger.LogInformation("Received ChargerState data, ChargerID: {ChargerId}", processedData.ChargerId);
-                
-                var storeInfo = await _firestoreService.StoreChargerStateAsync(processedData);
-                logger.LogInformation("FirestoreInfo: {StoreInfo}", storeInfo);
-              
-                logger.LogInformation("Charger state processed successfully for ChargerID: {ChargerId}", processedData.ChargerId);
-                return Ok(new { Status = "Success", Message = "Charger state received and processed" });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing charger state");
-                var errorResponse = new ErrorResponse
-                {
-                    Status = "Error",
-                    Message = "An error occurred while processing the charger state",
-                    ExceptionMessage = ex.Message,
-                    StackTrace = null //ex.StackTrace,
-                };
-                return StatusCode(500, errorResponse);
-            }
+            var processedData = await _dataProcessor.ProcessChargerStateAsync(message);
+            var storeInfo = await _firestoreService.StoreChargerStateAsync(processedData);
+
+            return Ok(new { Status = "Success", Message = "Charger state received and processed" });
         }
 
         /// <summary>
@@ -91,42 +69,20 @@ namespace apiEndpointNameSpace.Controllers
         /// <param name="serviceProvider">Service provider for retrieving required services.</param>
         /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("measurements")]
-        // Measurements message
-        // This message is send when charger is reporting meter values during the charging transaction. TypeofMeasurement, Phase and Unit are following OCPP1.6 model.
         public async Task<IActionResult> ReceiveMeasurements([FromBody] MeasurementsMessage message, IServiceProvider serviceProvider)
         {
-            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ReceiveMeasurements");
-
             if (!ModelState.IsValid)
             {
-                logger.LogWarning("Invalid ModelState in ReceiveMeasurements: {@ModelState}", ModelState);
-                return BadRequest(ModelState);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+                throw new ValidationException(string.Join("; ", errors));
             }
 
-            try
-            {
-                logger.LogInformation("ReceiveMeasurements: Received message: {@Message}", message);
+            var processedData = await _dataProcessor.ProcessMeasurementsAsync(message);
+            await _firestoreService.StoreMeasurementsAsync(processedData);
 
-                var processedData = await _dataProcessor.ProcessMeasurementsAsync(message);
-
-                logger.LogInformation("ReceiveMeasurements: Processed data: {@ProcessedData}", processedData);
-
-                await _firestoreService.StoreMeasurementsAsync(processedData);
-                logger.LogInformation("Measurements stored successfully for ChargerID: {ChargerId}", processedData.ChargerId);
-
-                return Ok(new { Status = "Success", Message = "Measurements received and processed" });
-            }
-            catch (ArgumentException ex)
-            {
-                logger.LogError(ex, "Validation error in ReceiveMeasurements: {Message}", ex.Message);
-                return BadRequest(new { Status = "Error", Message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error in ReceiveMeasurements: {Message}", ex.Message);
-                return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the measurements" });
-            }
+            return Ok(new { Status = "Success", Message = "Measurements received and processed" });
         }
 
         /// <summary>
@@ -136,31 +92,19 @@ namespace apiEndpointNameSpace.Controllers
         /// <param name="serviceProvider">Service provider for retrieving required services.</param>
         /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("full-charging-transaction")]
-        // Endpoint for FullChargingTransaction
-        // This message is used to deliver information of a full charging transaction. This message is delivered after the charging has ended.
         public async Task<IActionResult> ReceiveFullChargingTransaction([FromBody] FullChargingTransaction message, IServiceProvider serviceProvider)
         {
-            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ReceiveFullChargingTransaction");
-
             if (!ModelState.IsValid)
             {
-                logger.LogWarning("Invalid ModelState in ReceiveFullChargingTransaction");
-                return BadRequest(ModelState);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+                throw new ValidationException(string.Join("; ", errors));
             }
 
-            try
-            {
-                var processedData = await _dataProcessor.ProcessFullChargingTransactionAsync(message);
+            var processedData = await _dataProcessor.ProcessFullChargingTransactionAsync(message);
 
-                logger.LogInformation("Full charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
-                return Ok(new { Status = "Success", Message = "Full charging transaction received and processed" });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing full charging transaction");
-                return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the full charging transaction" });
-            }
+            return Ok(new { Status = "Success", Message = "Full charging transaction received and processed" });
         }
 
         /// <summary>
@@ -170,31 +114,19 @@ namespace apiEndpointNameSpace.Controllers
         /// <param name="serviceProvider">Service provider for retrieving required services.</param>
         /// <returns>HTTP response indicating success or failure.</returns>
         [HttpPost("charging-transaction")]
-        // Endpoint for ChargingTransaction
-        // This message is send when charging transaction starts and stops. Action can be: 'transaction_start' or 'transaction_stop'
         public async Task<IActionResult> ReceiveChargingTransaction([FromBody] ChargingTransaction message, IServiceProvider serviceProvider)
         {
-            var logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-                .CreateLogger("ReceiveChargingTransaction");
-
             if (!ModelState.IsValid)
             {
-                logger.LogWarning("Invalid ModelState in ReceiveChargingTransaction");
-                return BadRequest(ModelState);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
+                throw new ValidationException(string.Join("; ", errors));
             }
 
-            try
-            {
-                var processedData = await _dataProcessor.ProcessChargingTransactionAsync(message);
+            var processedData = await _dataProcessor.ProcessChargingTransactionAsync(message);
 
-                logger.LogInformation("Charging transaction processed successfully for TransactionID: {TransactionId}", processedData.TransactionId);
-                return Ok(new { Status = "Success", Message = "Charging transaction received and processed" });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing charging transaction");
-                return StatusCode(500, new { Status = "Error", Message = "An error occurred while processing the charging transaction" });
-            }
+            return Ok(new { Status = "Success", Message = "Charging transaction received and processed" });
         }
     }
 }
