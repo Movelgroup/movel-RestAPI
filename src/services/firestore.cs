@@ -34,7 +34,16 @@ namespace apiEndpointNameSpace.Services
                 logger.LogInformation(debugInfo);
 
                 await docRef.SetAsync(data);
-                logger.LogInformation("Successfully stored charger state for ChargerId: {ChargerId}", data.ChargerId);
+
+                // Store the state in the history subcollection
+                var historyRef = docRef.Collection("history").Document();
+                await historyRef.SetAsync(new
+                {
+                    Status = data.Status,
+                    Timestamp = data.Timestamp
+                });
+
+                logger.LogInformation("Successfully stored charger state and history for ChargerId: {ChargerId}", data.ChargerId);
                 return debugInfo;
             }
             catch (Exception ex)
