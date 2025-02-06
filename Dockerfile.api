@@ -5,9 +5,6 @@ WORKDIR /source
 # Update OS packages
 RUN apt-get update && apt-get upgrade -y
 
-# Optionally, force install a specific version of perl-base if it is available.
-RUN apt-get install -y perl-base=5.40.0-8
-
 # Copy the entire solution
 COPY . ./
 
