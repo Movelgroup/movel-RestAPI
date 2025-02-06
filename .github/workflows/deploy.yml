@@ -45,10 +45,10 @@ jobs:
           docker push "$IMAGE"
 
       # Scan API Docker Image with Trivy
-      - name: Scan API Docker Image with Trivy
+      - name: Aqua Security Trivy
         env:
           IMAGE: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/movel-restapi:${{ github.sha }}
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: 'table'
