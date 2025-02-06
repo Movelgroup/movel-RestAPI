@@ -52,7 +52,7 @@ namespace apiEndpointNameSpace.Services
                     SecretVersionName = secretVersionName
                 };
 
-                _logger.LogInformation("Fetching secrets: {SecretVersionName}", secretVersionName);
+                // _logger.LogInformation("Fetching secrets: {SecretVersionName}", secretVersionName);
 
                 var response = await _secretClient.AccessSecretVersionAsync(request);
                 string payload = response.Payload.Data.ToStringUtf8();
