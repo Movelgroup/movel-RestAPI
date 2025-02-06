@@ -26,7 +26,7 @@ namespace apiEndpointNameSpace.Models.Measurements
         public DateTime TimeStamp { get; set; }
 
         /// <summary>
-        /// List Of measurements. Datatype:List<Measurement>.
+        /// List Of Measurements. Datatype:List<Measurement>
         /// </summary>
         public List<Measurement>? Measurements { get; set; }
     }

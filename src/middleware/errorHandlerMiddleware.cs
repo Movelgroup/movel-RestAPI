@@ -7,18 +7,8 @@ using System.Threading.Tasks;
 
 namespace apiEndpointNameSpace.Middleware
 {
-    public class ErrorHandlerMiddleware
+    public class ErrorHandlerMiddleware(RequestDelegate _next, ILogger<ErrorHandlerMiddleware> _logger, IHostEnvironment _environment)
     {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<ErrorHandlerMiddleware> _logger;
-        private readonly IHostEnvironment _environment;
-
-        public ErrorHandlerMiddleware(RequestDelegate next, ILogger<ErrorHandlerMiddleware> logger, IHostEnvironment environment)
-        {
-            _next = next;
-            _logger = logger;
-            _environment = environment;
-        }
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -58,7 +48,7 @@ namespace apiEndpointNameSpace.Middleware
             await context.Response.WriteAsJsonAsync(response);
         }
 
-        private (int statusCode, string message, string details) CategorizeException(Exception exception)
+        private static (int statusCode, string message, string details) CategorizeException(Exception exception)
         {
             return exception switch
             {
@@ -73,9 +63,9 @@ namespace apiEndpointNameSpace.Middleware
     public class ErrorResponse
     {
         public int StatusCode { get; set; }
-        public string Message { get; set; }
+        public string? Message { get; set; }
         public string? Details { get; set; }
-        public string TraceId { get; set; }
+        public string? TraceId { get; set; }
     }
 
     public class ValidationException : Exception
