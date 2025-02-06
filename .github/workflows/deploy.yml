@@ -44,6 +44,18 @@ jobs:
           docker build --platform linux/amd64 -t "$IMAGE" -f Dockerfile.api .
           docker push "$IMAGE"
 
+      # Scan API Docker Image with Trivy
+      - name: Scan API Docker Image with Trivy
+        env:
+          IMAGE: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/movel-restapi:${{ github.sha }}
+        uses: aquasecurity/trivy-action@v0.6.0
+        with:
+          image-ref: ${{ env.IMAGE }}
+          format: 'table'
+          # Optionally, specify severity levels to fail on (e.g., CRITICAL,HIGH)
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'  # This will fail the job if vulnerabilities are found
+
       # Deploy API to Cloud Run
       - name: Deploy API to Cloud Run
         env:
@@ -66,6 +78,17 @@ jobs:
           echo "Building Swagger UI Docker Image: $IMAGE_SWAGGER"
           docker build --platform linux/amd64 -t "$IMAGE_SWAGGER" -f swagger-ui/Dockerfile.swagger .
           docker push "$IMAGE_SWAGGER"
+
+      # (Optional) Scan Swagger UI Docker Image with Trivy
+      #- name: Scan Swagger UI Docker Image with Trivy
+      #  env:
+      #    IMAGE_SWAGGER: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/swagger-ui:${{ github.sha }}
+      #  uses: aquasecurity/trivy-action@v0.6.0
+      #  with:
+      #    image-ref: ${{ env.IMAGE_SWAGGER }}
+      #    format: 'table'
+      #    severity: 'CRITICAL,HIGH'
+      #    exit-code: '1'
 
       # Deploy Swagger UI to Cloud Run
       - name: Deploy Swagger UI to Cloud Run
