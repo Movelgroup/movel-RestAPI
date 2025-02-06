@@ -5,6 +5,9 @@ WORKDIR /source
 # Update OS packages
 RUN apt-get update && apt-get upgrade -y
 
+# Optionally, force install a specific version of perl-base if it is available.
+RUN apt-get install -y perl-base=5.40.0-8
+
 # Copy the entire solution
 COPY . ./
 
@@ -13,8 +16,7 @@ RUN dotnet restore
 RUN dotnet publish -c Release -o /publish
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim
-# mcr.microsoft.com/dotnet/aspnet:9.0-slim
+FROM mcr.microsoft.com/dotnet/sdk:9.0
 WORKDIR /app
 COPY --from=build /publish .
 
