@@ -48,7 +48,7 @@ jobs:
       - name: Scan API Docker Image with Trivy
         env:
           IMAGE: europe-west1-docker.pkg.dev/movel-app-4scpom/movel-repo/movel-restapi:${{ github.sha }}
-        uses: aquasecurity/trivy-action@v0.6.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: ${{ env.IMAGE }}
           format: 'table'
