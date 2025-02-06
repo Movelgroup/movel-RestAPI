@@ -23,7 +23,7 @@ ENV PORT=8080
 
 # Expose port (optional)
 EXPOSE 8080
-
+ 
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
