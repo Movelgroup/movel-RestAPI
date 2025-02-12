@@ -39,8 +39,8 @@ namespace apiEndpointNameSpace.Services
                 var historyRef = docRef.Collection("history").Document();
                 await historyRef.SetAsync(new
                 {
-                    Status = data.Status,
-                    Timestamp = data.Timestamp
+                    status = data.Status,
+                    timestamp = data.Timestamp
                 });
 
                 logger.LogInformation("Successfully stored charger state and history for ChargerId: {ChargerId}", data.ChargerId);
