@@ -9,6 +9,7 @@ using apiEndpointNameSpace.Models.ChargerData;
 using apiEndpointNameSpace.Models.Measurements;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
+using Google.Cloud.SecretManager.V1;
 
 namespace apiEndpointNameSpace.Controllers.webhook
 {
@@ -24,6 +25,11 @@ namespace apiEndpointNameSpace.Controllers.webhook
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
         private readonly IConfiguration _configuration;
+
+        // Caching fields for webhook secret
+        private string _cachedWebhookSecret;
+        private DateTime _lastFetchTime;
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromHours(1);
 
         /// <summary>
         /// Constructor for EmablerWebhookController
@@ -51,32 +57,145 @@ namespace apiEndpointNameSpace.Controllers.webhook
             [FromHeader(Name = "Authorization")] string authHeader, 
             [FromBody] JsonElement payload)
         {
-            // Retrieve webhook secret from configuration
-            var webhookSecret = _configuration["Webhooks:EmablerPushApiSecret"];
-
-            // Validate webhook secret
-            if (string.IsNullOrEmpty(webhookSecret) || 
-                string.IsNullOrEmpty(authHeader) || 
-                !authHeader.Equals($"Bearer {webhookSecret}", StringComparison.Ordinal))
+            try 
             {
-                _logger.LogWarning("Unauthorized webhook access attempt");
-                return Unauthorized(new { 
-                    status = "Error", 
-                    message = "Unauthorized webhook access" 
-                });
-            }
+                // Log all incoming headers for debugging
+                foreach (var header in Request.Headers)
+                {
+                    _logger.LogInformation($"Header - {header.Key}: {header.Value}");
+                }
 
-            var activityId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
-            
-            try
-            {
-                // Log the received payload with a unique activity ID for traceability
+                // Retrieve webhook secret with caching
+                var webhookSecret = await GetWebhookSecretAsync();
+
+                // Log sensitive information carefully
+                _logger.LogInformation("Webhook secret retrieval attempt completed");
+                _logger.LogInformation($"Received Authorization Header: {(authHeader != null ? "[REDACTED]" : "NULL")}");
+
+                // Validate webhook secret
+                if (string.IsNullOrEmpty(webhookSecret))
+                {
+                    _logger.LogError("Webhook secret is not configured in Secret Manager");
+                    return StatusCode(500, new { 
+                        status = "Error", 
+                        message = "Webhook configuration error" 
+                    });
+                }
+
+                // Validate authorization header
+                if (string.IsNullOrEmpty(authHeader))
+                {
+                    _logger.LogWarning("No authorization header provided");
+                    return Unauthorized(new { 
+                        status = "Error", 
+                        message = "No authorization header" 
+                    });
+                }
+
+                // Use case-insensitive comparison and trim the header
+                var normalizedAuthHeader = authHeader.Trim();
+                var expectedAuthHeader = $"Bearer {webhookSecret}";
+
+                if (!normalizedAuthHeader.Equals(expectedAuthHeader, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Authorization header does not match expected value");
+                    return Unauthorized(new { 
+                        status = "Error", 
+                        message = "Invalid authorization" 
+                    });
+                }
+
+                // Generate an activity ID for tracing
+                var activityId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
+                
+                // Log the received payload
                 _logger.LogInformation(
                     "ActivityId: {ActivityId} - Received eMabler webhook payload: {Payload}", 
                     activityId, 
                     payload.ToString()
                 );
 
+                // Process message based on its type
+                await ProcessWebhookPayload(payload, activityId);
+
+                return Ok(new { 
+                    status = "Success", 
+                    message = "Webhook data processed successfully",
+                    activityId 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex, 
+                    "Error processing webhook: {ErrorMessage}", 
+                    ex.Message
+                );
+                return StatusCode(500, new { 
+                    status = "Error", 
+                    message = "Failed to process webhook"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the webhook secret with caching
+        /// </summary>
+        /// <returns>Webhook secret</returns>
+        private async Task<string> GetWebhookSecretAsync()
+        {
+            // Check cache first
+            if (_cachedWebhookSecret != null && 
+                DateTime.UtcNow - _lastFetchTime < _cacheDuration)
+            {
+                _logger.LogInformation("Returning cached webhook secret");
+                return _cachedWebhookSecret;
+            }
+
+            try 
+            {
+                var secretClient = SecretManagerServiceClient.Create();
+                
+                // Get project ID and secret ID from configuration
+                string projectId = _configuration["GoogleCloudProjectId"];
+                string secretId = _configuration["GoogleCloudSecrets:WebhookSecretId"];
+
+                if (string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(secretId))
+                {
+                    _logger.LogError("Project ID or Webhook Secret ID is not configured");
+                    return null;
+                }
+
+                var secretVersionName = new SecretVersionName(projectId, secretId, "latest");
+                var request = new AccessSecretVersionRequest
+                {
+                    SecretVersionName = secretVersionName
+                };
+
+                var response = await secretClient.AccessSecretVersionAsync(request);
+                string webhookSecret = response.Payload.Data.ToStringUtf8().Trim();
+
+                // Cache the secret
+                _cachedWebhookSecret = webhookSecret;
+                _lastFetchTime = DateTime.UtcNow;
+
+                _logger.LogInformation("Successfully retrieved and cached webhook secret from Secret Manager");
+                return webhookSecret;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve webhook secret from Secret Manager");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Processes the webhook payload based on its type
+        /// </summary>
+        private async Task ProcessWebhookPayload(JsonElement payload, string activityId)
+        {
+            try 
+            {
                 // Determine and process message type
                 if (IsChargerStateMessage(payload))
                 {
@@ -100,36 +219,22 @@ namespace apiEndpointNameSpace.Controllers.webhook
                         "ActivityId: {ActivityId} - Unrecognized webhook payload structure", 
                         activityId
                     );
-                    return BadRequest(new { 
-                        status = "Error", 
-                        message = "Unrecognized webhook payload",
-                        activityId 
-                    });
+                    throw new ArgumentException("Unrecognized webhook payload structure");
                 }
-
-                return Ok(new { 
-                    status = "Success", 
-                    message = "Webhook data processed successfully",
-                    activityId 
-                });
             }
             catch (Exception ex)
             {
                 _logger.LogError(
                     ex, 
-                    "ActivityId: {ActivityId} - Error processing webhook payload: {ErrorMessage}", 
+                    "ActivityId: {ActivityId} - Error processing payload: {ErrorMessage}", 
                     activityId, 
                     ex.Message
                 );
-                return StatusCode(500, new { 
-                    status = "Error", 
-                    message = "Failed to process webhook",
-                    activityId 
-                });
+                throw; // Rethrow to be handled by the calling method
             }
         }
 
-        // Helper methods to identify message types
+        // Existing helper methods for message type detection...
         private bool IsChargerStateMessage(JsonElement payload) =>
             payload.TryGetProperty("status", out _) && 
             payload.TryGetProperty("chargerId", out _);
@@ -147,7 +252,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
             payload.TryGetProperty("transactionId", out _) && 
             payload.TryGetProperty("action", out _);
 
-        // Processing methods for different message types
+        // Existing processing methods for different message types...
         private async Task ProcessChargerStateMessage(JsonElement payload)
         {
             var chargerState = payload.Deserialize<ChargerStateMessage>();
