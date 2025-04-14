@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models.ChargerData;
 using apiEndpointNameSpace.Models.Measurements;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 
 namespace apiEndpointNameSpace.Controllers.webhook
 {
@@ -15,36 +17,55 @@ namespace apiEndpointNameSpace.Controllers.webhook
     /// </summary>
     [ApiController]
     [Route("api/webHook")]
+    [AllowAnonymous]
     public class EmablerWebhookController : ControllerBase
     {
         private readonly ILogger<EmablerWebhookController> _logger;
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
+        private readonly IConfiguration _configuration;
 
         /// <summary>
         /// Constructor for EmablerWebhookController
         /// </summary>
-        /// <param name="logger">Logging service</param>
-        /// <param name="dataProcessor">Service for processing webhook data</param>
-        /// <param name="firestoreService">Service for storing data in Firestore</param>
         public EmablerWebhookController(
             ILogger<EmablerWebhookController> logger,
             IDataProcessor dataProcessor,
-            IFirestoreService firestoreService)
+            IFirestoreService firestoreService,
+            IConfiguration configuration)
         {
             _logger = logger;
             _dataProcessor = dataProcessor;
             _firestoreService = firestoreService;
+            _configuration = configuration;
         }
 
         /// <summary>
         /// Receives and processes webhook data from eMabler
         /// </summary>
+        /// <param name="authHeader">Authorization header</param>
         /// <param name="payload">JSON payload from webhook</param>
         /// <returns>HTTP response indicating processing result</returns>
         [HttpPost]
-        public async Task<IActionResult> ReceiveWebhookData([FromBody] JsonElement payload)
+        public async Task<IActionResult> ReceiveWebhookData(
+            [FromHeader(Name = "Authorization")] string authHeader, 
+            [FromBody] JsonElement payload)
         {
+            // Retrieve webhook secret from configuration
+            var webhookSecret = _configuration["Webhooks:EmablerPushApiSecret"];
+
+            // Validate webhook secret
+            if (string.IsNullOrEmpty(webhookSecret) || 
+                string.IsNullOrEmpty(authHeader) || 
+                !authHeader.Equals($"Bearer {webhookSecret}", StringComparison.Ordinal))
+            {
+                _logger.LogWarning("Unauthorized webhook access attempt");
+                return Unauthorized(new { 
+                    status = "Error", 
+                    message = "Unauthorized webhook access" 
+                });
+            }
+
             var activityId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
             
             try
