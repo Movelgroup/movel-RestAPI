@@ -28,7 +28,7 @@ namespace apiEndpointNameSpace.Services
 
             // Assuming the secret is named "ThirdPartyApiKeys" and stored as a JSON array
             string projectId = _configuration["GoogleCloudProjectId"];
-            string secretId = _configuration["GoogleCloudSecrets:emablerApi-key"]; // e.g., "ThirdPartyApiKeys"
+            string secretId = _configuration["GoogleCloudSecrets:apiKeySecretId"]; // e.g., "ThirdPartyApiKeys"
             if (string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(secretId))
             {
                 throw new ArgumentException("GoogleCloudProjectId is not configured.");
