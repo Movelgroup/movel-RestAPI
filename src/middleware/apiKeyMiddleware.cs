@@ -31,6 +31,7 @@ namespace apiEndpointNameSpace.Middleware
                 if (path.StartsWith("/swagger") || 
                     path.StartsWith("/swagger.json") || 
                     path.StartsWith("/health"))
+                    path.StartsWith("/api/webHook"); // Skip webhook as it has its own method for auth 
                 {
                     await _next(context);
                     return;
