@@ -9,15 +9,15 @@ using System.Net;
 using Microsoft.AspNetCore.Cors;
 using apiEndpointNameSpace.Middleware;
 
-namespace apiEndpointNameSpace.Controllers
+namespace apiEndpointNameSpace.Controllers.restApi
 {
 
     /// <summary>
     /// API controller for handling operations related to charger data and transactions.
     /// </summary>
     [ApiController]
-    [Route("EmablerChargerData")]
-    public class RestAPIController : ControllerBase
+    [Route("api/RestApiChargerData")]
+    public class RestApiController : ControllerBase
     {
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
@@ -29,7 +29,7 @@ namespace apiEndpointNameSpace.Controllers
         /// <param name="dataProcessor">Service for processing data related to chargers.</param>
         /// <param name="firestoreService">Service for interacting with Firestore database.</param>
         /// <param name="firebaseAuthService">Service for Firebase authentication.</param>
-        public RestAPIController(
+        public RestApiController(
             IDataProcessor dataProcessor,
             IFirestoreService firestoreService,
             IFirebaseAuthService firebaseAuthService)
