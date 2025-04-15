@@ -1,5 +1,6 @@
 // ApiKeyMiddleware.cs
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
@@ -15,16 +16,6 @@ namespace apiEndpointNameSpace.Middleware
     IApiKeyProvider _apiKeyProvider)
     {
         private const string APIKEYNAME = "X-Api-Key";
-
-        public ApiKeyMiddleware(
-            RequestDelegate next,
-            ILogger<ApiKeyMiddleware> logger,
-            IApiKeyProvider apiKeyProvider)
-        {
-            _next = next ?? throw new ArgumentNullException(nameof(next));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _apiKeyProvider = apiKeyProvider ?? throw new ArgumentNullException(nameof(apiKeyProvider));
-        }
 
         public async Task InvokeAsync(HttpContext context)
         {
