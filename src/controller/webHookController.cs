@@ -142,8 +142,8 @@ namespace apiEndpointNameSpace.Controllers.webhook
         [ProducesResponseType(typeof(WebhookErrorResponse), StatusCodes.Status401Unauthorized)] // Auth failed
         [ProducesResponseType(typeof(WebhookErrorResponse), StatusCodes.Status500InternalServerError)] // Server error (config or processing)
         public async Task<IActionResult> ReceiveWebhookData(
-            [FromHeader(Name = "Authorization")] string authHeader, 
-            [FromBody] JsonElement payload)
+        [FromHeader(Name = "Authorization")] string authHeader, 
+        [FromBody] JsonElement payload)
         {
             try 
             {
@@ -192,33 +192,6 @@ namespace apiEndpointNameSpace.Controllers.webhook
                         message = "Invalid authorization" 
                     });
                 }
-
-                // Decode the auth header
-                string decodedAuthHeaderValue;
-                try
-                {
-                    // Trim just in case there's extraneous whitespace around the Base64Url string
-                    var trimmedAuthHeader = authHeader.Trim();
-                    // Decode the Base64Url encoded header value
-                    byte[] decodedBytes = WebEncoders.Base64UrlDecode(trimmedAuthHeader);
-                    // Convert the original bytes back to a string (assuming secret is UTF-8)
-                    decodedAuthHeaderValue = Encoding.UTF8.GetString(decodedBytes);
-                }
-                catch (FormatException ex)
-                {
-                    // Log the error if the header is not valid Base64Url
-                    _logger.LogWarning(ex, "Failed to decode Authorization header - not valid Base64Url.");
-                    return Unauthorized(new WebhookErrorResponse { Message = "Invalid authorization header format." });
-                }
-
-                // Compare the *decoded* header value with the plain text secret from Secret Manager
-                if (!decodedAuthHeaderValue.Equals(webhookSecret, StringComparison.Ordinal)) // Case-sensitive comparison
-                {
-                    _logger.LogWarning("Decoded Authorization header value does not match expected secret.");
-                    // Do NOT log decodedAuthHeaderValue here unless you are certain it contains no sensitive info other than the secret itself.
-                    return Unauthorized(new WebhookErrorResponse { Message = "Invalid authorization." });
-                }
-
 
                 // Generate an activity ID for tracing
                 var activityId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
