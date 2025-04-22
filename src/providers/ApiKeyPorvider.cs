@@ -16,7 +16,7 @@ namespace apiEndpointNameSpace.Services
         private readonly IConfiguration _configuration;
         private readonly SecretManagerServiceClient _secretClient;
         private readonly SecretName _secretName;
-        private IEnumerable<ApiKeyEntry> _cachedApiKeys;
+        private IEnumerable<ApiKeyEntry>? _cachedApiKeys;
         private DateTime _lastFetchTime;
         private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5); // Adjust as needed
 
@@ -27,8 +27,11 @@ namespace apiEndpointNameSpace.Services
             _secretClient = SecretManagerServiceClient.Create();
 
             // Assuming the secret is named "ThirdPartyApiKeys" and stored as a JSON array
-            string projectId = _configuration["GoogleCloudProjectId"];
-            string secretId = _configuration["GoogleCloudSecrets:apiKeySecretId"]; // e.g., "ThirdPartyApiKeys"
+            string projectId = _configuration["GoogleCloudProjectId"]
+                ?? throw new InvalidOperationException("Configuration value 'GoogleCloudProjectId' is missing or null.");
+            string secretId = _configuration["GoogleCloudSecrets:apiKeySecretId"]
+                ?? throw new InvalidOperationException("Configuration value 'GoogleCloudSecrets:apiKeySecretId' is missing or null.");
+                            
             if (string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(secretId))
             {
                 throw new ArgumentException("GoogleCloudProjectId is not configured.");

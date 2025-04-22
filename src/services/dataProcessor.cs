@@ -24,21 +24,20 @@ namespace apiEndpointNameSpace.Services
 
         public async Task<ProcessedChargerState> ProcessChargerStateAsync(ChargerStateMessage message)
         {
-            if (string.IsNullOrEmpty(message.ChargerId))
+            // Assuming message non-null check happened before calling
+            if (string.IsNullOrEmpty(message.ChargerId)) // Still good to validate required fields
             {
-                throw new ArgumentException("ChargerId is required");
+                throw new ArgumentException("ChargerId is required for ChargerStateMessage");
             }
-
             var processedState = new ProcessedChargerState
             {
-                ChargerId = message.ChargerId,
+                ChargerId = message.ChargerId, // Safe due to check above
                 SocketId = message.SocketId,
                 Timestamp = message.TimeStamp,
-                Status = message.Status,
+                Status = message.Status ?? "UNKNOWN", // Provide default if Status can be null
                 MessageType = "chargerState",
-                Message = message.Message
+                Message = message.Message ?? string.Empty // Provide default if Message can be null
             };
-
             return await Task.FromResult(processedState);
         }
 
@@ -78,8 +77,8 @@ namespace apiEndpointNameSpace.Services
                         {
                             Value = parsedValue,
                             TypeOfMeasurement = m.TypeOfMeasurement,
-                            Phase = m.Phase,
-                            Unit = m.Unit
+                            Phase = m.Phase ?? string.Empty,
+                            Unit = m.Unit ?? string.Empty
                         };
                     }).ToList() ?? new List<ProcessedMeasurement>()
                 };

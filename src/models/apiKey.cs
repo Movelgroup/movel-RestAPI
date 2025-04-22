@@ -4,7 +4,7 @@ namespace apiEndpointNameSpace.Models.ApiKey
 {
     public class ApiKeyConfig
     {
-        public required List<ApiKeyEntry> ValidKeys { get; set; }
+        public required List<ApiKeyEntry> ValidKeys { get; set; } = new();
     }
 
     public class ApiKeyEntry
