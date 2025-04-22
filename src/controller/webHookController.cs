@@ -11,14 +11,30 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Google.Cloud.SecretManager.V1;
 
+using Microsoft.AspNetCore.Http; // Needed for StatusCodes
+using Swashbuckle.AspNetCore.Annotations; // Needed for Swagger annotations
+using Microsoft.Extensions.Primitives; // Needed for StringValues type hint
+
+using Microsoft.AspNetCore.WebUtilities; // For Base64UrlDecode
+using System.Text; // For Encoding.UTF8
+
+
+
 namespace apiEndpointNameSpace.Controllers.webhook
 {
+    using apiEndpointNameSpace.Models.Responses;
+
     /// <summary>
-    /// Controller for handling webhooks from eMabler's Push API
+    /// Controller for handling incoming webhooks from eMabler's Push API.
     /// </summary>
+    /// <remarks>
+    /// This endpoint receives various types of messages pushed by eMabler.
+    /// Authentication is handled via a custom Authorization header containing a shared secret.
+    /// </remarks>
     [ApiController]
     [Route("api/webHook")]
     [AllowAnonymous]
+    [Tags("Webhooks")] // Groups this controller under "Webhooks" in Swagger UI
     public class EmablerWebhookController : ControllerBase
     {
         private readonly ILogger<EmablerWebhookController> _logger;
@@ -47,12 +63,84 @@ namespace apiEndpointNameSpace.Controllers.webhook
         }
 
         /// <summary>
-        /// Receives and processes webhook data from eMabler
+        /// Receives and processes webhook push data from eMabler.
         /// </summary>
-        /// <param name="authHeader">Authorization header</param>
-        /// <param name="payload">JSON payload from webhook</param>
-        /// <returns>HTTP response indicating processing result</returns>
+        /// <param name="authHeader" example="your_shared_secret_value">
+        /// **Required.** The raw shared secret provided during eMabler webhook configuration.
+        /// **Important:** Do **NOT** include the "Bearer " prefix.
+        /// </param>
+        /// <param name="payload">
+        /// The JSON payload from the webhook. The structure varies depending on the message type pushed by eMabler.
+        /// See Remarks section for examples.
+        /// </param>
+        /// <remarks>
+        /// This endpoint handles various message types from eMabler. Authentication requires the exact shared secret configured in eMabler to be passed in the `Authorization` header.
+        ///
+        /// **Example Payload Structures:**
+        ///
+        /// *Charger State:*
+        /// ```json
+        /// {
+        ///   "chargerId": "CHG-123",
+        ///   "status": "AVAILABLE",
+        ///   "errorCode": "NONE",
+        ///   "timestamp": "2024-04-22T10:30:00Z"
+        /// }
+        /// ```
+        ///
+        /// *Measurements:*
+        /// ```json
+        /// {
+        ///   "chargerId": "CHG-123",
+        ///   "connectorId": 1,
+        ///   "transactionId": "TXN-456",
+        ///   "measurements": [
+        ///     { "type": "ENERGY_ACTIVE_IMPORT_REGISTER", "value": 15.5, "unit": "kWh", "timestamp": "2024-04-22T10:35:00Z" },
+        ///     { "type": "POWER_ACTIVE_IMPORT", "value": 7.2, "unit": "kW", "timestamp": "2024-04-22T10:35:00Z" }
+        ///   ]
+        /// }
+        /// ```
+        ///
+        /// *Full Charging Transaction:*
+        /// ```json
+        /// {
+        ///   "transactionId": "TXN-789",
+        ///   "chargerId": "CHG-456",
+        ///   "connectorId": 1,
+        ///   "idTag": "RFID123",
+        ///   "meterStart": 100.0,
+        ///   "meterStop": 125.5,
+        ///   "startTime": "2024-04-22T09:00:00Z",
+        ///   "stopTime": "2024-04-22T11:00:00Z",
+        ///   "deviceTimeStampStart": "2024-04-22T09:00:05Z",
+        ///   "deviceTimeStampEnd": "2024-04-22T11:00:10Z",
+        ///   "stopReason": "REMOTE"
+        /// }
+        /// ```
+        ///
+        /// *Charging Transaction Start/Stop Action:*
+        /// ```json
+        /// {
+        ///   "transactionId": "TXN-999",
+        ///   "chargerId": "CHG-789",
+        ///   "action": "START", // or "STOP"
+        ///   "idTag": "RFID456",
+        ///   "timestamp": "2024-04-22T12:00:00Z"
+        /// }
+        /// ```
+        /// </remarks>
+        /// <returns>HTTP response indicating processing result (OK, Unauthorized, or InternalServerError).</returns>
         [HttpPost]
+        [Consumes("application/json")] // Explicitly state expected request content type
+        [Produces("application/json")] // Explicitly state response content type
+        [SwaggerOperation(
+            Summary = "Receives webhook data from eMabler",
+            Description = "Processes various push messages from eMabler after validating the custom Authorization header.",
+            OperationId = "ReceiveEmablerWebhook" // Unique ID for the operation
+        )]
+        [ProducesResponseType(typeof(WebhookSuccessResponse), StatusCodes.Status200OK)] // Success
+        [ProducesResponseType(typeof(WebhookErrorResponse), StatusCodes.Status401Unauthorized)] // Auth failed
+        [ProducesResponseType(typeof(WebhookErrorResponse), StatusCodes.Status500InternalServerError)] // Server error (config or processing)
         public async Task<IActionResult> ReceiveWebhookData(
             [FromHeader(Name = "Authorization")] string authHeader, 
             [FromBody] JsonElement payload)
@@ -104,6 +192,33 @@ namespace apiEndpointNameSpace.Controllers.webhook
                         message = "Invalid authorization" 
                     });
                 }
+
+                // Decode the auth header
+                string decodedAuthHeaderValue;
+                try
+                {
+                    // Trim just in case there's extraneous whitespace around the Base64Url string
+                    var trimmedAuthHeader = authHeader.Trim();
+                    // Decode the Base64Url encoded header value
+                    byte[] decodedBytes = WebEncoders.Base64UrlDecode(trimmedAuthHeader);
+                    // Convert the original bytes back to a string (assuming secret is UTF-8)
+                    decodedAuthHeaderValue = Encoding.UTF8.GetString(decodedBytes);
+                }
+                catch (FormatException ex)
+                {
+                    // Log the error if the header is not valid Base64Url
+                    _logger.LogWarning(ex, "Failed to decode Authorization header - not valid Base64Url.");
+                    return Unauthorized(new WebhookErrorResponse { Message = "Invalid authorization header format." });
+                }
+
+                // Compare the *decoded* header value with the plain text secret from Secret Manager
+                if (!decodedAuthHeaderValue.Equals(webhookSecret, StringComparison.Ordinal)) // Case-sensitive comparison
+                {
+                    _logger.LogWarning("Decoded Authorization header value does not match expected secret.");
+                    // Do NOT log decodedAuthHeaderValue here unless you are certain it contains no sensitive info other than the secret itself.
+                    return Unauthorized(new WebhookErrorResponse { Message = "Invalid authorization." });
+                }
+
 
                 // Generate an activity ID for tracing
                 var activityId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
@@ -190,8 +305,11 @@ namespace apiEndpointNameSpace.Controllers.webhook
         }
 
         /// <summary>
-        /// Processes the webhook payload based on its type
+        /// Determines the type of the incoming webhook payload and routes it to the appropriate processing method.
         /// </summary>
+        /// <param name="payload">The raw JSON payload.</param>
+        /// <param name="activityId">The trace activity ID.</param>
+        /// <exception cref="ArgumentException">Thrown if the payload structure is not recognized.</exception>
         private async Task ProcessWebhookPayload(JsonElement payload, string activityId)
         {
             try 
