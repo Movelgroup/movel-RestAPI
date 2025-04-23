@@ -208,23 +208,32 @@ namespace apiEndpointNameSpace
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddCors(options =>
+            {
+                // Policy for regular API endpoints 
+                options.AddPolicy("ApiPolicy", builder =>
                 {
-                    // Policy for regular API endpoints 
-                    options.AddPolicy("ApiPolicy", builder =>
-                    {
-                        builder
-                            .WithOrigins(
-                                "http://localhost:3000",
-                                "https://movelsoftwaremanager.web.app",
-                                "https://movelsoftwaremanager.firebaseapp.com",
-                                "https://swagger-ui-service-390725443005.europe-west1.run.app",
-                                "https://movel-restapi-390725443005.europe-west1.run.app"
-                                )
-                            .AllowAnyMethod()
-                            .AllowAnyHeader()
-                            .AllowCredentials();
-                    });
+                    builder
+                        .WithOrigins(
+                            "http://localhost:3000",
+                            "https://movelsoftwaremanager.web.app",
+                            "https://movelsoftwaremanager.firebaseapp.com",
+                            "https://swagger-ui-service-390725443005.europe-west1.run.app",
+                            "https://movel-restapi-390725443005.europe-west1.run.app"
+                            )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
                 });
+            });
+
+            // Load the webhook secret at application startup instead of per-request
+            services.AddSingleton<IWebhookSecretProvider>(provider => 
+            {
+                var configuration = provider.GetRequiredService<IConfiguration>();
+                var logger = provider.GetRequiredService<ILogger<WebhookSecretProvider>>();
+                return new WebhookSecretProvider(configuration, logger);
+            });
+
 
             // Configure JWT Authentication
             services.AddAuthentication(options =>
