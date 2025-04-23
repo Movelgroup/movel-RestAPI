@@ -15,10 +15,6 @@ using Microsoft.AspNetCore.Http; // Needed for StatusCodes
 using Swashbuckle.AspNetCore.Annotations; // Needed for Swagger annotations
 using Microsoft.Extensions.Primitives; // Needed for StringValues type hint
 
-using Microsoft.AspNetCore.WebUtilities; // For Base64UrlDecode
-using System.Text; // For Encoding.UTF8
-
-
 
 namespace apiEndpointNameSpace.Controllers.webhook
 {
@@ -41,6 +37,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
         private readonly IConfiguration _configuration;
+        private readonly IWebhookSecretProvider _secretProvider;
 
         // Caching fields for webhook secret
         private string _cachedWebhookSecret;
@@ -54,12 +51,14 @@ namespace apiEndpointNameSpace.Controllers.webhook
             ILogger<EmablerWebhookController> logger,
             IDataProcessor dataProcessor,
             IFirestoreService firestoreService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IWebhookSecretProvider secretProvider)
         {
             _logger = logger;
             _dataProcessor = dataProcessor;
             _firestoreService = firestoreService;
             _configuration = configuration;
+            _secretProvider = secretProvider;
         }
 
         /// <summary>
@@ -154,7 +153,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
                 }
 
                 // Retrieve webhook secret with caching
-                var webhookSecret = await GetWebhookSecretAsync();
+                string webhookSecret = _secretProvider.GetSecret();
 
                 // Log sensitive information carefully
                 _logger.LogInformation("Webhook secret retrieval attempt completed");
@@ -276,6 +275,22 @@ namespace apiEndpointNameSpace.Controllers.webhook
                 return null;
             }
         }
+
+        [HttpGet]
+        [SwaggerOperation(
+            Summary = "Verify webhook endpoint",
+            Description = "Simple endpoint to verify the webhook is available. Used for configuration testing.",
+            OperationId = "VerifyEmablerWebhook"
+        )]
+        [ProducesResponseType(typeof(WebhookSuccessResponse), StatusCodes.Status200OK)]
+        public IActionResult VerifyWebhook()
+        {
+            return Ok(new { 
+                status = "Success", 
+                message = "Webhook endpoint is active" 
+            });
+        }
+
 
         /// <summary>
         /// Determines the type of the incoming webhook payload and routes it to the appropriate processing method.
