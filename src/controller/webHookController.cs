@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models.ChargerData;
 using apiEndpointNameSpace.Models.Measurements;
+using apiEndpointNameSpace.Converters;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Google.Cloud.SecretManager.V1;
@@ -38,6 +39,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
         private readonly IFirestoreService _firestoreService;
         private readonly IConfiguration _configuration;
         private readonly IWebhookSecretProvider _secretProvider;
+        private readonly JsonSerializerOptions _jsonOptions;
 
 
         /// <summary>
@@ -55,6 +57,13 @@ namespace apiEndpointNameSpace.Controllers.webhook
             _firestoreService = firestoreService;
             _configuration = configuration;
             _secretProvider = secretProvider;
+
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true  // This helps with case mismatches too
+            };
+            _jsonOptions.Converters.Add(new DateTimeUtcConverter());
+
         }
 
         /// <summary>
@@ -306,27 +315,27 @@ namespace apiEndpointNameSpace.Controllers.webhook
         // Existing processing methods for different message types...
         private async Task ProcessChargerStateMessage(JsonElement payload)
         {
-            var chargerState = payload.Deserialize<ChargerStateMessage>();
+            var chargerState = payload.Deserialize<ChargerStateMessage>(_jsonOptions);
             var processedState = await _dataProcessor.ProcessChargerStateAsync(chargerState);
             await _firestoreService.StoreChargerStateAsync(processedState);
         }
 
         private async Task ProcessMeasurementsMessage(JsonElement payload)
         {
-            var measurements = payload.Deserialize<MeasurementsMessage>();
+            var measurements = payload.Deserialize<MeasurementsMessage>(_jsonOptions);
             var processedMeasurements = await _dataProcessor.ProcessMeasurementsAsync(measurements);
             await _firestoreService.StoreMeasurementsAsync(processedMeasurements);
         }
 
         private async Task ProcessFullChargingTransactionMessage(JsonElement payload)
         {
-            var fullTransaction = payload.Deserialize<FullChargingTransaction>();
+            var fullTransaction = payload.Deserialize<FullChargingTransaction>(_jsonOptions);
             await _dataProcessor.ProcessFullChargingTransactionAsync(fullTransaction);
         }
 
         private async Task ProcessChargingTransactionMessage(JsonElement payload)
         {
-            var chargingTransaction = payload.Deserialize<ChargingTransaction>();
+            var chargingTransaction = payload.Deserialize<ChargingTransaction>(_jsonOptions);
             await _dataProcessor.ProcessChargingTransactionAsync(chargingTransaction);
         }
     }

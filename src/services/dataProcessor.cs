@@ -33,7 +33,7 @@ namespace apiEndpointNameSpace.Services
             {
                 ChargerId = message.ChargerId, // Safe due to check above
                 SocketId = message.SocketId,
-                Timestamp = message.TimeStamp,
+                Timestamp = message.TimeStamp.ToUniversalTime(), // Convert to UTC
                 Status = message.Status ?? "UNKNOWN", // Provide default if Status can be null
                 MessageType = "chargerState",
                 Message = message.Message ?? string.Empty // Provide default if Message can be null
