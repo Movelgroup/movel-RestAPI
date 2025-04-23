@@ -31,6 +31,10 @@ namespace apiEndpointNameSpace
         /// <param name="args">Command-line arguments.</param>
         public static void Main(string[] args)
         {
+
+            // Configure thread pool to avoid starvation
+            ThreadPool.SetMinThreads(100, 100);
+
             var builder = WebApplication.CreateBuilder(args);
 
             var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
@@ -43,7 +47,7 @@ namespace apiEndpointNameSpace
             ConfigureLogging(builder);
 
             var firestoreDb = InitializeFirestoreDb(builder.Configuration);
-            InitializeFirebaseAuth(builder.Configuration);
+            // InitializeFirebaseAuth(builder.Configuration);
 
             // Add services to the container.
             ConfigureServices(builder.Services, firestoreDb, builder.Configuration);
@@ -59,6 +63,8 @@ namespace apiEndpointNameSpace
 
 
             app.Run();
+
+            StartThreadPoolMonitoring(app.Services.GetRequiredService<ILogger<Program>>());
 
         }
 
@@ -201,7 +207,9 @@ namespace apiEndpointNameSpace
             
             if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
             {
-                throw new InvalidOperationException($"JWT Configuration missing. Key: {jwtKey != null}, Issuer: {jwtIssuer != null}, Audience: {jwtAudience != null}");
+                var logger = services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+                logger.LogError("JWT Configuration missing. Please check environment variables or configuration files.");
+                throw new InvalidOperationException("JWT Configuration missing. See logs for details.");
             }
 
             services.AddSingleton(firestoreDb);
@@ -364,6 +372,26 @@ namespace apiEndpointNameSpace
                     endpoints.MapGet("/health", () => "Healthy").RequireCors("ApiPolicy");
                 }); 
 
+        }
+
+        private static void StartThreadPoolMonitoring(ILogger logger)
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    ThreadPool.GetAvailableThreads(out int workerThreads, out int completionPortThreads);
+                    ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCompletionPortThreads);
+                    
+                    logger.LogInformation(
+                        "Thread pool stats - Available: {WorkerThreads}/{MaxWorkerThreads} worker, " +
+                        "{CompletionPortThreads}/{MaxCompletionPortThreads} I/O completion",
+                        workerThreads, maxWorkerThreads,
+                        completionPortThreads, maxCompletionPortThreads);
+                        
+                    await Task.Delay(TimeSpan.FromMinutes(5));
+                }
+            });
         }
     }
 }
