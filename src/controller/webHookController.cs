@@ -176,15 +176,14 @@ namespace apiEndpointNameSpace.Controllers.webhook
                 }
 
                 // Use case-insensitive comparison and trim the header
+                // Use case-insensitive comparison and trim the header
                 var normalizedAuthHeader = authHeader.Trim();
-                // var expectedAuthHeader = $"Bearer {webhookSecret}";
-
-                if (!normalizedAuthHeader.Equals(normalizedAuthHeader, StringComparison.OrdinalIgnoreCase))
+                if (!normalizedAuthHeader.Equals(webhookSecret, StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning("Authorization header does not match expected value");
-                    return Unauthorized(new { 
-                        status = "Error", 
-                        message = "Invalid authorization" 
+                    return Unauthorized(new {
+                        status = "Error",
+                        message = "Invalid authorization"
                     });
                 }
 
