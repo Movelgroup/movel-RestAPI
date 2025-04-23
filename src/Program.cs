@@ -61,11 +61,9 @@ namespace apiEndpointNameSpace
             ConfigureApp(app);
 
 
-
-            app.Run();
-
             StartThreadPoolMonitoring(app.Services.GetRequiredService<ILogger<Program>>());
 
+            app.Run();
         }
 
         /// <summary>
