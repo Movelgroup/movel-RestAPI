@@ -39,10 +39,6 @@ namespace apiEndpointNameSpace.Controllers.webhook
         private readonly IConfiguration _configuration;
         private readonly IWebhookSecretProvider _secretProvider;
 
-        // Caching fields for webhook secret
-        private string _cachedWebhookSecret;
-        private DateTime _lastFetchTime;
-        private readonly TimeSpan _cacheDuration = TimeSpan.FromHours(1);
 
         /// <summary>
         /// Constructor for EmablerWebhookController
@@ -225,56 +221,6 @@ namespace apiEndpointNameSpace.Controllers.webhook
             }
         }
 
-        /// <summary>
-        /// Retrieves the webhook secret with caching
-        /// </summary>
-        /// <returns>Webhook secret</returns>
-        private async Task<string> GetWebhookSecretAsync()
-        {
-            // Check cache first
-            if (_cachedWebhookSecret != null && 
-                DateTime.UtcNow - _lastFetchTime < _cacheDuration)
-            {
-                _logger.LogInformation("Returning cached webhook secret");
-                return _cachedWebhookSecret;
-            }
-
-            try 
-            {
-                var secretClient = SecretManagerServiceClient.Create();
-                
-                // Get project ID and secret ID from configuration
-                string projectId = _configuration["GoogleCloudProjectId"];
-                string secretId = _configuration["GoogleCloudSecrets:WebhookSecretId"];
-
-                if (string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(secretId))
-                {
-                    _logger.LogError("Project ID or Webhook Secret ID is not configured");
-                    return null;
-                }
-
-                var secretVersionName = new SecretVersionName(projectId, secretId, "latest");
-                var request = new AccessSecretVersionRequest
-                {
-                    SecretVersionName = secretVersionName
-                };
-
-                var response = await secretClient.AccessSecretVersionAsync(request);
-                string webhookSecret = response.Payload.Data.ToStringUtf8().Trim();
-
-                // Cache the secret
-                _cachedWebhookSecret = webhookSecret;
-                _lastFetchTime = DateTime.UtcNow;
-
-                _logger.LogInformation("Successfully retrieved and cached webhook secret from Secret Manager");
-                return webhookSecret;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to retrieve webhook secret from Secret Manager");
-                return null;
-            }
-        }
 
         [HttpGet]
         [SwaggerOperation(
