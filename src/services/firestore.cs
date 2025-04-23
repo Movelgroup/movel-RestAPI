@@ -26,22 +26,28 @@ namespace apiEndpointNameSpace.Services
 
         public async Task<string> StoreChargerStateAsync(ProcessedChargerState data)
         {
-
             try
             {
                 var docRef = _db.Collection("charger_states").Document(data.ChargerId);
                 var debugInfo = $"Storing data in: {docRef.Parent.Path}, DB: {_db.ProjectId}";
                 logger.LogInformation(debugInfo);
 
-                await docRef.SetAsync(data);
-
-                // Store the state in the history subcollection
+                // Create a batch write to perform both operations as a single atomic operation
+                WriteBatch batch = _db.StartBatch();
+                
+                // Main document update
+                batch.Set(docRef, data);
+                
+                // History subcollection update
                 var historyRef = docRef.Collection("history").Document();
-                await historyRef.SetAsync(new
+                batch.Set(historyRef, new
                 {
                     status = data.Status,
                     timestamp = data.Timestamp
                 });
+
+                // Execute both operations in one network call
+                await batch.CommitAsync();
 
                 logger.LogInformation("Successfully stored charger state and history for ChargerId: {ChargerId}", data.ChargerId);
                 return debugInfo;
