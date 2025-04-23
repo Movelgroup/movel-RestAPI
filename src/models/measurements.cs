@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Google.Cloud.Firestore;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Text.Json.Serialization;
 
 namespace apiEndpointNameSpace.Models.Measurements
 {
@@ -13,21 +14,26 @@ namespace apiEndpointNameSpace.Models.Measurements
         /// <summary>
         /// ChargerId. Datatype:String.
         /// </summary>
+        [JsonPropertyName("chargerId")]
         public string? ChargerId { get; set; }
+
 
         /// <summary>
         /// SocketId. Datatype:String.
         /// </summary>
+        [JsonPropertyName("socketId")]
         public int SocketId { get; set; }
 
         /// <summary>
         /// Time when measurement is made. Datatype:DateTime.
         /// </summary>
+        [JsonPropertyName("timeStamp")]
         public DateTime TimeStamp { get; set; }
 
         /// <summary>
         /// List Of Measurements. Datatype:List<Measurement>
         /// </summary>
+        [JsonPropertyName("measurements")]
         public List<Measurement>? Measurements { get; set; }
     }
 
