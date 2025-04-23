@@ -61,8 +61,6 @@ namespace apiEndpointNameSpace
             ConfigureApp(app);
 
 
-            StartThreadPoolMonitoring(app.Services.GetRequiredService<ILogger<Program>>());
-
             app.Run();
         }
 
@@ -326,6 +324,7 @@ namespace apiEndpointNameSpace
                     c.IncludeXmlComments(xmlPath);
                 });
 
+            services.AddHostedService<ThreadPoolMonitorService>();
             services.AddSingleton<IDataProcessor, DataProcessorService>();
             services.AddSingleton<IFirestoreService>(sp => 
             {
@@ -372,24 +371,5 @@ namespace apiEndpointNameSpace
 
         }
 
-        private static void StartThreadPoolMonitoring(ILogger logger)
-        {
-            Task.Run(async () =>
-            {
-                while (true)
-                {
-                    ThreadPool.GetAvailableThreads(out int workerThreads, out int completionPortThreads);
-                    ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCompletionPortThreads);
-                    
-                    logger.LogInformation(
-                        "Thread pool stats - Available: {WorkerThreads}/{MaxWorkerThreads} worker, " +
-                        "{CompletionPortThreads}/{MaxCompletionPortThreads} I/O completion",
-                        workerThreads, maxWorkerThreads,
-                        completionPortThreads, maxCompletionPortThreads);
-                        
-                    await Task.Delay(TimeSpan.FromMinutes(5));
-                }
-            });
-        }
     }
 }
