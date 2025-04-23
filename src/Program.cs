@@ -33,7 +33,7 @@ namespace apiEndpointNameSpace
         {
 
             // Configure thread pool to avoid starvation
-            ThreadPool.SetMinThreads(100, 100);
+            ThreadPool.SetMinThreads(400, 400);
 
             var builder = WebApplication.CreateBuilder(args);
 
