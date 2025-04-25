@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using apiEndpointNameSpace.Interfaces;
 using apiEndpointNameSpace.Models.ChargerData;
 using apiEndpointNameSpace.Models.Measurements;
-using apiEndpointNameSpace.Converters;
 using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Google.Cloud.SecretManager.V1;
@@ -15,6 +14,10 @@ using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.Http; // Needed for StatusCodes
 using Swashbuckle.AspNetCore.Annotations; // Needed for Swagger annotations
 using Microsoft.Extensions.Primitives; // Needed for StringValues type hint
+
+using Microsoft.AspNetCore.WebUtilities; // For Base64UrlDecode
+using System.Text; // For Encoding.UTF8
+
 
 
 namespace apiEndpointNameSpace.Controllers.webhook
@@ -38,9 +41,11 @@ namespace apiEndpointNameSpace.Controllers.webhook
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
         private readonly IConfiguration _configuration;
-        private readonly IWebhookSecretProvider _secretProvider;
-        private readonly JsonSerializerOptions _jsonOptions;
 
+        // Caching fields for webhook secret
+        private string _cachedWebhookSecret;
+        private DateTime _lastFetchTime;
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromHours(1);
 
         /// <summary>
         /// Constructor for EmablerWebhookController
@@ -49,21 +54,12 @@ namespace apiEndpointNameSpace.Controllers.webhook
             ILogger<EmablerWebhookController> logger,
             IDataProcessor dataProcessor,
             IFirestoreService firestoreService,
-            IConfiguration configuration,
-            IWebhookSecretProvider secretProvider)
+            IConfiguration configuration)
         {
             _logger = logger;
             _dataProcessor = dataProcessor;
             _firestoreService = firestoreService;
             _configuration = configuration;
-            _secretProvider = secretProvider;
-
-            _jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true  // This helps with case mismatches too
-            };
-            _jsonOptions.Converters.Add(new DateTimeUtcConverter());
-
         }
 
         /// <summary>
@@ -158,7 +154,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
                 }
 
                 // Retrieve webhook secret with caching
-                string webhookSecret = _secretProvider.GetSecret();
+                var webhookSecret = await GetWebhookSecretAsync();
 
                 // Log sensitive information carefully
                 _logger.LogInformation("Webhook secret retrieval attempt completed");
@@ -174,27 +170,39 @@ namespace apiEndpointNameSpace.Controllers.webhook
                     });
                 }
 
-                // Validate authorization header
-                if (string.IsNullOrEmpty(authHeader))
+                // Validate authorization header format
+                if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.Contains(' '))
                 {
-                    _logger.LogWarning("No authorization header provided");
-                    return Unauthorized(new { 
-                        status = "Error", 
-                        message = "No authorization header" 
+                    _logger.LogWarning("Invalid Authorization header format");
+                    return Unauthorized(new {
+                        status = "Error",
+                        message = "Invalid authorization format. Expected '<scheme> <token>'"
                     });
                 }
 
-                // Use case-insensitive comparison and trim the header
-                // Use case-insensitive comparison and trim the header
-                var normalizedAuthHeader = authHeader.Trim();
-                if (!normalizedAuthHeader.Equals(webhookSecret, StringComparison.OrdinalIgnoreCase))
+                var parts = authHeader.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                var scheme = parts[0];
+                var token = parts[1];
+
+                if (!scheme.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
                 {
-                    _logger.LogWarning("Authorization header does not match expected value");
+                    _logger.LogWarning("Unsupported Authorization scheme: {Scheme}", scheme);
                     return Unauthorized(new {
                         status = "Error",
-                        message = "Invalid authorization"
+                        message = "Unsupported authorization scheme"
                     });
                 }
+
+                // Compare token to the secret
+                if (token != webhookSecret)
+                {
+                    _logger.LogWarning("Authorization token does not match expected secret");
+                    return Unauthorized(new {
+                        status = "Error",
+                        message = "Invalid authorization token"
+                    });
+                }
+
 
                 // Generate an activity ID for tracing
                 var activityId = Activity.Current?.Id ?? Guid.NewGuid().ToString();
@@ -232,19 +240,88 @@ namespace apiEndpointNameSpace.Controllers.webhook
 
         [HttpGet]
         [SwaggerOperation(
-            Summary = "Verify webhook endpoint",
-            Description = "Simple endpoint to verify the webhook is available. Used for configuration testing.",
-            OperationId = "VerifyEmablerWebhook"
+            Summary = "Validation endpoint for webhook Authorization header",
+            Description = "Responds with HTTP 200 OK if Authorization header is valid",
+            OperationId = "ValidateWebhookAuth"
         )]
-        [ProducesResponseType(typeof(WebhookSuccessResponse), StatusCodes.Status200OK)]
-        public IActionResult VerifyWebhook()
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ValidateWebhookAuth(
+            [FromHeader(Name = "Authorization")] string authHeader)
         {
-            return Ok(new { 
-                status = "Success", 
-                message = "Webhook endpoint is active" 
-            });
+            var webhookSecret = await GetWebhookSecretAsync();
+
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.Contains(' '))
+            {
+                return Unauthorized();
+            }
+
+            var parts = authHeader.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2 || !parts[0].Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+            {
+                return Unauthorized();
+            }
+
+            var token = parts[1];
+            if (token != webhookSecret)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(); // eMabler will expect 200 OK if valid
         }
 
+
+        /// <summary>
+        /// Retrieves the webhook secret with caching
+        /// </summary>
+        /// <returns>Webhook secret</returns>
+        private async Task<string> GetWebhookSecretAsync()
+        {
+            // Check cache first
+            if (_cachedWebhookSecret != null && 
+                DateTime.UtcNow - _lastFetchTime < _cacheDuration)
+            {
+                _logger.LogInformation("Returning cached webhook secret");
+                return _cachedWebhookSecret;
+            }
+
+            try 
+            {
+                var secretClient = SecretManagerServiceClient.Create();
+                
+                // Get project ID and secret ID from configuration
+                string projectId = _configuration["GoogleCloudProjectId"];
+                string secretId = _configuration["GoogleCloudSecrets:WebhookSecretId"];
+
+                if (string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(secretId))
+                {
+                    _logger.LogError("Project ID or Webhook Secret ID is not configured");
+                    return null;
+                }
+
+                var secretVersionName = new SecretVersionName(projectId, secretId, "latest");
+                var request = new AccessSecretVersionRequest
+                {
+                    SecretVersionName = secretVersionName
+                };
+
+                var response = await secretClient.AccessSecretVersionAsync(request);
+                string webhookSecret = response.Payload.Data.ToStringUtf8().Trim();
+
+                // Cache the secret
+                _cachedWebhookSecret = webhookSecret;
+                _lastFetchTime = DateTime.UtcNow;
+
+                _logger.LogInformation("Successfully retrieved and cached webhook secret from Secret Manager");
+                return webhookSecret;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve webhook secret from Secret Manager");
+                return null;
+            }
+        }
 
         /// <summary>
         /// Determines the type of the incoming webhook payload and routes it to the appropriate processing method.
@@ -315,27 +392,27 @@ namespace apiEndpointNameSpace.Controllers.webhook
         // Existing processing methods for different message types...
         private async Task ProcessChargerStateMessage(JsonElement payload)
         {
-            var chargerState = payload.Deserialize<ChargerStateMessage>(_jsonOptions);
+            var chargerState = payload.Deserialize<ChargerStateMessage>();
             var processedState = await _dataProcessor.ProcessChargerStateAsync(chargerState);
             await _firestoreService.StoreChargerStateAsync(processedState);
         }
 
         private async Task ProcessMeasurementsMessage(JsonElement payload)
         {
-            var measurements = payload.Deserialize<MeasurementsMessage>(_jsonOptions);
+            var measurements = payload.Deserialize<MeasurementsMessage>();
             var processedMeasurements = await _dataProcessor.ProcessMeasurementsAsync(measurements);
             await _firestoreService.StoreMeasurementsAsync(processedMeasurements);
         }
 
         private async Task ProcessFullChargingTransactionMessage(JsonElement payload)
         {
-            var fullTransaction = payload.Deserialize<FullChargingTransaction>(_jsonOptions);
+            var fullTransaction = payload.Deserialize<FullChargingTransaction>();
             await _dataProcessor.ProcessFullChargingTransactionAsync(fullTransaction);
         }
 
         private async Task ProcessChargingTransactionMessage(JsonElement payload)
         {
-            var chargingTransaction = payload.Deserialize<ChargingTransaction>(_jsonOptions);
+            var chargingTransaction = payload.Deserialize<ChargingTransaction>();
             await _dataProcessor.ProcessChargingTransactionAsync(chargingTransaction);
         }
     }
