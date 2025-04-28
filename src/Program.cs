@@ -258,6 +258,23 @@ namespace apiEndpointNameSpace
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not configured")))
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var path = context.HttpContext.Request.Path;
+
+                        // Skip JWT validation for /api/webHook
+                        if (path.StartsWithSegments("/api/webHook"))
+                        {
+                            context.NoResult();
+                            return Task.CompletedTask;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             services.AddSwaggerGen(c =>
