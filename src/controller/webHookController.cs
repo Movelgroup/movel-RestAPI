@@ -41,6 +41,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
         private readonly IConfiguration _configuration;
+        private readonly IWebhookSecretProvider _webhookSecretProvider;
 
         // Caching fields for webhook secret
         private string _cachedWebhookSecret;
@@ -54,12 +55,14 @@ namespace apiEndpointNameSpace.Controllers.webhook
             ILogger<EmablerWebhookController> logger,
             IDataProcessor dataProcessor,
             IFirestoreService firestoreService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IWebhookSecretProvider webhookSecretProvider)
         {
             _logger = logger;
             _dataProcessor = dataProcessor;
             _firestoreService = firestoreService;
             _configuration = configuration;
+            _webhookSecretProvider = webhookSecretProvider;
         }
 
         /// <summary>
@@ -154,7 +157,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
                 }
 
                 // Retrieve webhook secret with caching
-                var webhookSecret = await GetWebhookSecretAsync();
+                var webhookSecret = _webhookSecretProvider.GetSecret();
 
                 // Log sensitive information carefully
                 _logger.LogInformation("Webhook secret retrieval attempt completed");
@@ -249,7 +252,7 @@ namespace apiEndpointNameSpace.Controllers.webhook
         public async Task<IActionResult> ValidateWebhookAuth(
             [FromHeader(Name = "Authorization")] string authHeader)
         {
-            var webhookSecret = await GetWebhookSecretAsync();
+            var webhookSecret = _webhookSecretProvider.GetSecret();
 
             if (string.IsNullOrEmpty(authHeader) || !authHeader.Contains(' '))
             {
@@ -272,56 +275,6 @@ namespace apiEndpointNameSpace.Controllers.webhook
         }
 
 
-        /// <summary>
-        /// Retrieves the webhook secret with caching
-        /// </summary>
-        /// <returns>Webhook secret</returns>
-        private async Task<string> GetWebhookSecretAsync()
-        {
-            // Check cache first
-            if (_cachedWebhookSecret != null && 
-                DateTime.UtcNow - _lastFetchTime < _cacheDuration)
-            {
-                _logger.LogInformation("Returning cached webhook secret");
-                return _cachedWebhookSecret;
-            }
-
-            try 
-            {
-                var secretClient = SecretManagerServiceClient.Create();
-                
-                // Get project ID and secret ID from configuration
-                string projectId = _configuration["GoogleCloudProjectId"];
-                string secretId = _configuration["GoogleCloudSecrets:WebhookSecretId"];
-
-                if (string.IsNullOrEmpty(projectId) || string.IsNullOrEmpty(secretId))
-                {
-                    _logger.LogError("Project ID or Webhook Secret ID is not configured");
-                    return null;
-                }
-
-                var secretVersionName = new SecretVersionName(projectId, secretId, "latest");
-                var request = new AccessSecretVersionRequest
-                {
-                    SecretVersionName = secretVersionName
-                };
-
-                var response = await secretClient.AccessSecretVersionAsync(request);
-                string webhookSecret = response.Payload.Data.ToStringUtf8().Trim();
-
-                // Cache the secret
-                _cachedWebhookSecret = webhookSecret;
-                _lastFetchTime = DateTime.UtcNow;
-
-                _logger.LogInformation("Successfully retrieved and cached webhook secret from Secret Manager");
-                return webhookSecret;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to retrieve webhook secret from Secret Manager");
-                return null;
-            }
-        }
 
         /// <summary>
         /// Determines the type of the incoming webhook payload and routes it to the appropriate processing method.
