@@ -26,7 +26,7 @@ namespace apiEndpointNameSpace.Models.ChargerData
         public int SocketId { get; set; }
 
         [SwaggerSchema("Timestamp of the charger state.")]
-        [JsonPropertyName("timeStamp")]
+        [JsonPropertyName("deviceTimeStamp")] // Map "deviceTimeStamp" to "TimeStamp"
         public DateTime TimeStamp { get; set; }
 
         [SwaggerSchema("The current status of the charger.", Description = "Charging")]
