@@ -314,7 +314,6 @@ namespace apiEndpointNameSpace
                 var logger = sp.GetRequiredService<ILogger<FirestoreService>>();
                 return new FirestoreService(firestoreDb, logger);
             });
-            services.AddSingleton<IFirebaseAuthService, FirebaseAuthService>();
         }
 
 

@@ -21,22 +21,18 @@ namespace apiEndpointNameSpace.Controllers.restApi
     {
         private readonly IDataProcessor _dataProcessor;
         private readonly IFirestoreService _firestoreService;
-        private readonly IFirebaseAuthService _firebaseAuthService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RestAPIController"/> class.
         /// </summary>
         /// <param name="dataProcessor">Service for processing data related to chargers.</param>
         /// <param name="firestoreService">Service for interacting with Firestore database.</param>
-        /// <param name="firebaseAuthService">Service for Firebase authentication.</param>
         public RestApiController(
             IDataProcessor dataProcessor,
-            IFirestoreService firestoreService,
-            IFirebaseAuthService firebaseAuthService)
+            IFirestoreService firestoreService)
         {
             _dataProcessor = dataProcessor;
             _firestoreService = firestoreService;
-            _firebaseAuthService = firebaseAuthService;
         }
 
         /// <summary>
