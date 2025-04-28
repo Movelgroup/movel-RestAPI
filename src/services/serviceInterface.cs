@@ -26,12 +26,4 @@ namespace apiEndpointNameSpace.Interfaces
         Task StoreSlowChargingAsync(ProcessedMeasurements data, decimal powerKw);
     }
 
-        public interface IFirebaseAuthService
-    {
-        Task<AuthResponse> AuthenticateUserMailAsync(string email, string password, List<String> chargerIDs);
-        Task<AuthResponse> AuthenticateUserTokenAsync(string token, List<String> chargerIDs);
-
-        Task<string> GenerateJwtTokenAsync(FirebaseToken decodedToken, List<string> allowedChargers);
-    }
-
 }
